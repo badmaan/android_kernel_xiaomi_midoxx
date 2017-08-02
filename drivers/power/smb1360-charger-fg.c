@@ -2213,7 +2213,8 @@ static int hot_soft_handler(struct smb1360_chip *chip, u8 rt_stat)
 
 	if (chip->workaround_flags & WRKRND_HARD_JEITA) {
 		cancel_delayed_work_sync(&chip->jeita_work);
-		schedule_delayed_work(&chip->jeita_work,
+		queue_delayed_work(system_power_efficient_wq,
+			&chip->jeita_work,
 					msecs_to_jiffies(JEITA_WORK_MS));
 		smb1360_stay_awake(&chip->smb1360_ws,
 			WAKEUP_SRC_JEITA_SOFT);
