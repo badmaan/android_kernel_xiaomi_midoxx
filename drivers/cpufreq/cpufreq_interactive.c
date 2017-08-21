@@ -38,6 +38,7 @@
 #include <trace/events/cpufreq_interactive_x.h>
 
 static int active_count;
+bool cpufreq_screen_on = true;
 
 struct cpufreq_interactive_x_cpuinfo {
 	struct timer_list cpu_timer;
@@ -135,6 +136,9 @@ static bool align_windows = true;
  * frequency.
  */
 static unsigned int max_freq_hysteresis;
+
+#define DEFAULT_SCREEN_OFF_MAX 2016000
+static unsigned long screen_off_max = DEFAULT_SCREEN_OFF_MAX;
 
 static bool io_is_busy;
 
@@ -595,6 +599,9 @@ static int cpufreq_interactive_x_speedchange_task(void *data)
 					hvt = min(hvt, pjcpu->local_hvtime);
 				}
 			}
+
+			if (unlikely(!cpufreq_screen_on))
+				if (max_freq > screen_off_max) max_freq = screen_off_max;
 
 			if (max_freq != pcpu->policy->cur) {
 				__cpufreq_driver_target(pcpu->policy,
@@ -1073,6 +1080,29 @@ static ssize_t store_boostpulse_duration(
 
 define_one_global_rw(boostpulse_duration);
 
+static ssize_t show_screen_off_maxfreq(struct kobject *kobj,
+                                        struct attribute *attr, char *buf)
+{
+        return sprintf(buf, "%lu\n", screen_off_max);
+}
+
+static ssize_t store_screen_off_maxfreq(struct kobject *kobj,
+                                         struct attribute *attr,
+                                         const char *buf, size_t count)
+{
+        int ret;
+        unsigned long val;
+
+        ret = kstrtol(buf, 0, &val);
+        if (ret < 0) return ret;
+        if (val < 268800) screen_off_max = 2016000;
+        else screen_off_max = val;
+        return count;
+}
+ 
+static struct global_attr screen_off_maxfreq = __ATTR(screen_off_maxfreq, 0644,
+		show_screen_off_maxfreq, store_screen_off_maxfreq);
+			   
 static ssize_t show_io_is_busy(struct kobject *kobj,
 			struct attribute *attr, char *buf)
 {
@@ -1150,6 +1180,7 @@ static struct attribute *interactive_x_attributes[] = {
 	&boost.attr,
 	&boostpulse.attr,
 	&boostpulse_duration.attr,
+	&screen_off_maxfreq.attr,
 	&io_is_busy_attr.attr,
 	&max_freq_hysteresis_attr.attr,
 	&align_windows_attr.attr,
@@ -1189,8 +1220,6 @@ static int cpufreq_governor_interactive_x(struct cpufreq_policy *policy,
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
-		if (!cpu_online(policy->cpu))
-			return -EINVAL;
 
 		mutex_lock(&gov_lock);
 
@@ -1333,6 +1362,7 @@ static int __init cpufreq_interactive_x_init(void)
 	struct cpufreq_interactive_x_cpuinfo *pcpu;
 	struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
 
+	cpufreq_screen_on = true;
 	/* Initalize per-cpu timers */
 	for_each_possible_cpu(i) {
 		pcpu = &per_cpu(cpuinfo, i);
