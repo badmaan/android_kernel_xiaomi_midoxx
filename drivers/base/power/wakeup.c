@@ -60,6 +60,12 @@ static bool enable_msm_hsic_ws = true;
 module_param(enable_msm_hsic_ws, bool, 0644);
 static bool enable_si_ws = true;
 module_param(enable_si_ws, bool, 0644);
+static bool enable_mmc0_detect_ws = true;
+module_param(enable_mmc0_detect_ws, bool, 0644);
+static bool enable_bbd_wake_lock_ws = true;
+module_param(enable_bbd_wake_lock_ws, bool, 0644);
+static bool enable_GPSD_ws = true;
+module_param(enable_GPSD_ws, bool, 0644);
 
 /*
  * If set, the suspend/hibernate code will abort transitions to a sleep state
@@ -532,6 +538,12 @@ static bool wakeup_source_blocker(struct wakeup_source *ws)
 				!strncmp(ws->name, "msm_hsic_host", wslen)) ||
 			(!enable_si_ws && 
 				!strncmp(ws->name, "sensor_ind", wslen)) ||
+			(!enable_mmc0_detect_ws && 
+				!strncmp(ws->name, "mmc0_detect", wslen)) ||
+			(!enable_bbd_wake_lock_ws && 
+				!strncmp(ws->name, "bbd_wake_lock", wslen)) ||
+			(!enable_GPSD_ws && 
+				!strncmp(ws->name, "GPSD", wslen)) ||
 			(!enable_bluesleep_ws && 
 				!strncmp(ws->name, "bluesleep", wslen)) ||
 			(!enable_wlan_ctrl_wake_ws &&
