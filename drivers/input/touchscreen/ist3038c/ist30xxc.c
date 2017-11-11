@@ -91,7 +91,7 @@ void tsp_printk(int level, const char *fmt, ...)
 	vaf.fmt = fmt;
 	vaf.va = &args;
 
-	printk("%s %pV", IST30XX_LOG_TAG, &vaf);
+	pr_debug("%s %pV", IST30XX_LOG_TAG, &vaf);
 
 	va_end(args);
 }
@@ -2035,7 +2035,7 @@ static int ist30xx_probe(struct i2c_client *client,
 			IMAGIS_TSP_DD_VERSION, client->addr);
 
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
-		printk(KERN_INFO "i2c_check_functionality error\n");
+		pr_debug(KERN_INFO "i2c_check_functionality error\n");
 		return -EIO;
 	}
 

@@ -103,25 +103,25 @@ int ist30xx_parse_touch_node(struct ist30xx_data *data, u8 flag,
 #if TOUCH_NODE_PARSING_DEBUG
 	tsp_info("RAW - %d * %d\n", tsp->ch_num.tx, tsp->ch_num.rx);
 	for (i = 0; i < tsp->ch_num.tx; i++) {
-		printk("\n[ TSP ] ");
+		pr_debug("\n[ TSP ] ");
 		for (j = 0; j < tsp->ch_num.rx; j++)
-			printk("%4d ", node->raw[(i * tsp->ch_num.rx) + j]);
+			pr_debug("%4d ", node->raw[(i * tsp->ch_num.rx) + j]);
 	}
-	printk("\n");
+	pr_debug("\n");
 	tsp_info("BASE - %d * %d\n", tsp->ch_num.tx, tsp->ch_num.rx);
 	for (i = 0; i < tsp->ch_num.tx; i++) {
-		printk("\n[ TSP ] ");
+		pr_debug("\n[ TSP ] ");
 		for (j = 0; j < tsp->ch_num.rx; j++)
-			printk("%4d ", node->base[(i * tsp->ch_num.rx) + j]);
+			pr_debug("%4d ", node->base[(i * tsp->ch_num.rx) + j]);
 	}
-	printk("\n");
+	pr_debug("\n");
 	tsp_info("FILTER - %d * %d\n", tsp->ch_num.tx, tsp->ch_num.rx);
 	for (i = 0; i < tsp->ch_num.tx; i++) {
-		printk("\n[ TSP ] ");
+		pr_debug("\n[ TSP ] ");
 		for (j = 0; j < tsp->ch_num.rx; j++)
-			printk("%4d ", node->filter[(i * tsp->ch_num.rx) + j]);
+			pr_debug("%4d ", node->filter[(i * tsp->ch_num.rx) + j]);
 	}
-	printk("\n");
+	pr_debug("\n");
 #endif
 
 	return 0;
