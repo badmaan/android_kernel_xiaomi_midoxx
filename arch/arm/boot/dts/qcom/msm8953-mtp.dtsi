@@ -247,7 +247,6 @@
 	status = "ok";
 };
 
-
 /{
 	mtp_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;

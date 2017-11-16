@@ -115,18 +115,16 @@ bool osq_lock(struct optimistic_spin_queue *lock)
 	 * being CPU2 would be updated to point to CPU0 node:
 	 *      node->prev = prev;
 	 *      WRITE_ONCE(prev->next, node);
+	 * osq_lock()                   unqueue
 	 *
-	 * At this point if next instruction
-	 *      WRITE_ONCE(next->prev, prev);
-	 * in CPU2 path is committed before the update of CPU0 node->prev =
-	 * prev then CPU0 node->prev will point to CPU6 node. At this point
-	 * if CPU0 path's node->prev = prev is committed resulting in change
-	 * of CPU0 prev back to CPU2 node. CPU2 node->next is NULL, so if
-	 * CPU0 gets into unqueue path of osq_lock it will keep spinning
-	 * in infinite loop as condition prev->next == node will never be
-	 * true.
+	 * node->prev = prev            osq_wait_next()
+	 * WMB                          MB
+	 * prev->next = node            next->prev = prev // unqueue-C
+	 *
+	 * Here 'node->prev' and 'next->prev' are the same variable and we need
+	 * to ensure these stores happen in-order to avoid corrupting the list.
 	 */
-	smp_mb();
+	smp_wmb();
 
 	ACCESS_ONCE(prev->next) = node;
 
