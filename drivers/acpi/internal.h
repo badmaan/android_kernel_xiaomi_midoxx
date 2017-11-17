@@ -150,6 +150,7 @@ void acpi_ec_remove_query_handler(struct acpi_ec *ec, u8 query_bit);
 /*--------------------------------------------------------------------------
                                   Suspend/Resume
   -------------------------------------------------------------------------- */
+extern bool acpi_s2idle_wakeup(void);
 extern int acpi_sleep_init(void);
 
 #ifdef CONFIG_ACPI_SLEEP
