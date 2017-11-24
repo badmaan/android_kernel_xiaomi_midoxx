@@ -408,12 +408,14 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -Wno-bool-compare -Wno-logical-not-parentheses -Wno-incompatible-pointer-types \
 		   -Wno-tautological-compare -Wno-unused-const-variable \
+		   -Wno-misleading-indentation -Wno-format -fno-modulo-sched -Wno-multistatement-macros \
 		   -Wno-format-truncation -Wno-duplicate-decl-specifier -Wno-memset-elt-size -Wno-bool-operation -Wno-int-in-bool-context -Wno-parentheses -Wno-switch-unreachable -Wno-stringop-overflow -Wno-format-overflow \
 		   --param l1-cache-size=32 \
 		   --param l2-cache-size=2048 \
 		   --param l1-cache-line-size=64 \
 		   -std=gnu89 \
-		   -mcpu=cortex-a53 -mtune=cortex-a53 \
+		   -fno-asynchronous-unwind-tables \
+		   -mcpu=cortex-a53 -mtune=cortex-a53 -march=armv8-a+crc+crypto -mcpu=cortex-a53+crc+crypto \
 
 # Optimizations
 KBUILD_CFLAGS	+= -pipe -fno-pic -O3 -g0 -fivopts
@@ -646,12 +648,6 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning,array-bounds,)
 # Disable all buggy detection warnings
 KBUILD_CFLAGS   += $(call cc-disable-warning,incompatible-pointer-types,)
 KBUILD_CFLAGS   += $(call cc-disable-warning,unused-const-variable,)
-
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os
-else
-KBUILD_CFLAGS	+= -O3
-endif
 
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
