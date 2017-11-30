@@ -1731,10 +1731,10 @@ static ssize_t fw_name_store(struct wcd_cpe_core *core,
 	if (pos)
 		copy_count = pos - buf;
 
-	if (copy_count > (WCD_CPE_IMAGE_FNAME_MAX - 1)) {
+	if (copy_count > WCD_CPE_IMAGE_FNAME_MAX) {
 		dev_err(core->dev,
 			"%s: Invalid length %d, max allowed %d\n",
-			__func__, copy_count, WCD_CPE_IMAGE_FNAME_MAX - 1);
+			__func__, copy_count, WCD_CPE_IMAGE_FNAME_MAX);
 		return -EINVAL;
 	}
 

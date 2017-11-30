@@ -1088,7 +1088,6 @@ sg_ioctl(struct file *filp, unsigned int cmd_in, unsigned long arg)
 				return -ENOMEM;
 			read_lock_irqsave(&sfp->rq_list_lock, iflags);
 			sg_fill_request_table(sfp, rinfo);
-
 			read_unlock_irqrestore(&sfp->rq_list_lock, iflags);
 			result = __copy_to_user(p, rinfo,
 						SZ_SG_REQ_INFO * SG_MAX_QUEUE);

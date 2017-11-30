@@ -2569,9 +2569,6 @@ int rmnet_ipa3_set_data_quota(struct wan_ioctl_set_data_quota *data)
 	int index;
 	struct ipa_set_data_usage_quota_req_msg_v01 req;
 
-	/* prevent string buffer overflows */
-	data->interface_name[IFNAMSIZ-1] = '\0';
-
 	index = find_vchannel_name_index(data->interface_name);
 	IPAWANERR("iface name %s, quota %lu\n",
 		  data->interface_name,
@@ -2665,11 +2662,6 @@ int rmnet_ipa3_query_tethering_stats(struct wan_ioctl_query_tether_stats *data,
 	struct ipa_get_data_stats_req_msg_v01 *req;
 	struct ipa_get_data_stats_resp_msg_v01 *resp;
 	int pipe_len, rc;
-
-	if (data != NULL) {
-		data->upstreamIface[IFNAMSIZ-1] = '\0';
-		data->tetherIface[IFNAMSIZ-1] = '\0';
-	}
 
 	req = kzalloc(sizeof(struct ipa_get_data_stats_req_msg_v01),
 			GFP_KERNEL);

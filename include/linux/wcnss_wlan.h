@@ -42,7 +42,7 @@ struct wcnss_wlan_config {
 	int	is_pronto_vadc;
 	int	is_pronto_v3;
 	void __iomem	*msm_wcnss_base;
-	unsigned int iris_id;
+	int	iris_id;
 	int	vbatt;
 	struct vregs_level pronto_vlevel[PRONTO_REGULATORS];
 	struct vregs_level iris_vlevel[IRIS_REGULATORS];
