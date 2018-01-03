@@ -1,4 +1,5 @@
 /* Copyright (c) 2013-2017, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2017 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -17,6 +18,7 @@
 #include "camera.h"
 #include "msm_cci.h"
 #include "msm_camera_dt_util.h"
+#include <linux/hqsysfs.h>
 
 /* Logging macro */
 #undef CDBG
@@ -965,6 +967,15 @@ CSID_TG:
 	 * probed on this slot
 	 */
 	s_ctrl->is_probe_succeed = 1;
+
+	if (0 == s_ctrl->id) {
+		hq_regiser_hw_info(HWID_MAIN_CAM, (char *)(s_ctrl->sensordata->eeprom_name));
+	} else if (1 == s_ctrl->id) {
+		hq_regiser_hw_info(HWID_MAIN_CAM, (char *)(s_ctrl->sensordata->eeprom_name));
+	} else if (2 == s_ctrl->id) {
+		hq_regiser_hw_info(HWID_SUB_CAM, (char *)(s_ctrl->sensordata->eeprom_name));
+	}
+
 	return rc;
 
 camera_power_down:
@@ -985,6 +996,8 @@ static int32_t msm_sensor_driver_get_dt_data(struct msm_sensor_ctrl_t *s_ctrl)
 	struct msm_camera_sensor_board_info *sensordata = NULL;
 	struct device_node                  *of_node = s_ctrl->of_node;
 	uint32_t cell_id;
+
+	CDBG("%s %d", __func__, __LINE__);
 
 	s_ctrl->sensordata = kzalloc(sizeof(*sensordata), GFP_KERNEL);
 	if (!s_ctrl->sensordata) {
@@ -1102,7 +1115,7 @@ static int32_t msm_sensor_driver_parse(struct msm_sensor_ctrl_t *s_ctrl)
 {
 	int32_t                   rc = 0;
 
-	CDBG("Enter");
+	CDBG("%s %d\n", __func__, __LINE__);
 	/* Validate input parameters */
 
 
@@ -1170,6 +1183,8 @@ static int32_t msm_sensor_driver_platform_probe(struct platform_device *pdev)
 {
 	int32_t rc = 0;
 	struct msm_sensor_ctrl_t *s_ctrl = NULL;
+
+	CDBG("%s %d\n", __func__, __LINE__);
 
 	/* Create sensor control structure */
 	s_ctrl = kzalloc(sizeof(*s_ctrl), GFP_KERNEL);

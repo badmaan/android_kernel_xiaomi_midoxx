@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2017, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2017 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -33,6 +34,7 @@
 #include "mdss_debug.h"
 #include "mdss_dsi_phy.h"
 #include "mdss_dba_utils.h"
+#include <linux/hqsysfs.h>
 
 #define XO_CLK_RATE	19200000
 #define CMDLINE_DSI_CTL_NUM_STRING_LEN 2
@@ -44,6 +46,8 @@ static struct mdss_dsi_data *mdss_dsi_res;
 #define DSI_ENABLE_PC_LATENCY PM_QOS_DEFAULT_VALUE
 
 static struct pm_qos_request mdss_dsi_pm_qos_request;
+
+int panel_suspend_reset_flag = 0;
 
 static void mdss_dsi_pm_qos_add_request(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
@@ -294,6 +298,13 @@ static int mdss_dsi_panel_power_off(struct mdss_panel_data *pdata)
 
 	if (mdss_dsi_pinctrl_set_state(ctrl_pdata, false))
 		pr_debug("reset disable: pinctrl not enabled\n");
+
+	if (2 == panel_suspend_reset_flag) {
+		msleep(1);
+	}
+	if (3==panel_suspend_reset_flag) {
+		msleep(4);     //delay 4ms
+	}
 
 	ret = msm_dss_enable_vreg(
 		ctrl_pdata->panel_power_data.vreg_config,
@@ -2696,12 +2707,12 @@ static struct device_node *mdss_dsi_pref_prim_panel(
  *
  * returns pointer to panel node on success, NULL on error.
  */
+char panel_name[MDSS_MAX_PANEL_LEN] = "";
 static struct device_node *mdss_dsi_find_panel_of_node(
 		struct platform_device *pdev, char *panel_cfg)
 {
 	int len, i = 0;
 	int ctrl_id = pdev->id - 1;
-	char panel_name[MDSS_MAX_PANEL_LEN] = "";
 	char ctrl_id_stream[3] =  "0:";
 	char *str1 = NULL, *str2 = NULL, *override_cfg = NULL;
 	char cfg_np_name[MDSS_MAX_PANEL_LEN] = "";
@@ -2762,8 +2773,20 @@ static struct device_node *mdss_dsi_find_panel_of_node(
 		}
 		pr_info("%s: cmdline:%s panel_name:%s\n",
 			__func__, panel_cfg, panel_name);
+		hq_regiser_hw_info(HWID_LCM, panel_name);
 		if (!strcmp(panel_name, NONE_PANEL))
 			goto exit;
+
+		if (!strcmp(panel_name, "qcom,mdss_dsi_otm1911_fhd_video")){
+			panel_suspend_reset_flag = 2;
+			}
+		if (!strcmp(panel_name, "qcom,mdss_dsi_ili9885_boe_fhd_video")) {
+			panel_suspend_reset_flag = 3;
+			}
+
+		pr_err("liujia print panel name = %d\n",
+			       panel_suspend_reset_flag);
+
 
 		mdss_node = of_parse_phandle(pdev->dev.of_node,
 			"qcom,mdss-mdp", 0);
@@ -3902,6 +3925,48 @@ static int mdss_dsi_parse_ctrl_params(struct platform_device *ctrl_pdev,
 
 }
 
+u32 te_count;
+static irqreturn_t te_interrupt(int irq, void *data)
+{
+	disable_irq_nosync(irq);
+
+	te_count++;
+
+	enable_irq(irq);
+	return IRQ_HANDLED;
+}
+
+int init_te_irq(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
+{
+	int rc = -1;
+	int irq;
+	if (gpio_is_valid(ctrl_pdata->disp_te_gpio)) {
+		rc = gpio_request(ctrl_pdata->disp_te_gpio, "te-gpio");
+		if (rc < 0) {
+			pr_err("%s: gpio_request fail rc=%d\n", __func__, rc);
+			return rc ;
+		}
+		rc = gpio_direction_input(ctrl_pdata->disp_te_gpio);
+		if (rc < 0) {
+			pr_err("%s: gpio_direction_input fail rc=%d\n", __func__, rc);
+			return rc ;
+		}
+		irq = gpio_to_irq(ctrl_pdata->disp_te_gpio);
+		pr_err("%s:liujia  irq = %d\n", __func__, irq);
+		rc = request_threaded_irq(irq, te_interrupt, NULL,
+			IRQF_TRIGGER_RISING|IRQF_ONESHOT,
+			"te-irq", ctrl_pdata);
+		if (rc < 0) {
+			pr_err("%s: request_irq fail rc=%d\n", __func__, rc);
+			return rc ;
+		}
+	} else {
+		 pr_err("%s:liujia irq gpio not provided\n", __func__);
+		 return rc ;
+	}
+		return 0;
+}
+
 static int mdss_dsi_parse_gpio_params(struct platform_device *ctrl_pdev,
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
@@ -3923,7 +3988,6 @@ static int mdss_dsi_parse_gpio_params(struct platform_device *ctrl_pdev,
 
 	ctrl_pdata->disp_te_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
 		"qcom,platform-te-gpio", 0);
-
 	if (!gpio_is_valid(ctrl_pdata->disp_te_gpio))
 		pr_err("%s:%d, TE gpio not specified\n",
 						__func__, __LINE__);
