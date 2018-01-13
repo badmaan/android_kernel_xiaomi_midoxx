@@ -418,7 +418,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mcpu=cortex-a53 -mtune=cortex-a53 -march=armv8-a+crc+crypto -mcpu=cortex-a53+crc+crypto \
 
 # Optimizations
-KBUILD_CFLAGS	+= -pipe -fno-pic -O3 -g0 -fivopts
+KBUILD_CFLAGS	+= -pipe -fno-pic -O3 -g0 -fivopts -finline-functions
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
