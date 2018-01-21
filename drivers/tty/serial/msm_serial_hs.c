@@ -61,6 +61,7 @@
 #include <linux/ipc_logging.h>
 #include <asm/irq.h>
 #include <linux/kthread.h>
+#include <uapi/linux/sched.h>
 
 #include <linux/msm-sps.h>
 #include <linux/platform_data/msm_serial_hs.h>
@@ -271,7 +272,7 @@ static struct of_device_id msm_hs_match_table[] = {
 #define UARTDM_TX_BUF_SIZE UART_XMIT_SIZE
 #define UARTDM_RX_BUF_SIZE 512
 #define RETRY_TIMEOUT 5
-#define UARTDM_NR 256
+#define UARTDM_NR 4
 #define BAM_PIPE_MIN 0
 #define BAM_PIPE_MAX 11
 #define BUS_SCALING 1
@@ -3288,6 +3289,7 @@ static void  msm_serial_hs_rt_init(struct uart_port *uport)
 	msm_uport->pm_state = MSM_HS_PM_SUSPENDED;
 	mutex_unlock(&msm_uport->mtx);
 	pm_runtime_enable(uport->dev);
+	tty_port_set_policy(&uport->state->port, SCHED_FIFO, 1);
 }
 
 static int msm_hs_runtime_suspend(struct device *dev)
@@ -3422,7 +3424,7 @@ static int msm_hs_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "%s: error creating logging context",
 								__func__);
 	} else {
-		msm_uport->ipc_debug_mask = INFO_LEV;
+		msm_uport->ipc_debug_mask = DBG_LEV;
 		ret = sysfs_create_file(&pdev->dev.kobj,
 				&dev_attr_debug_mask.attr);
 		if (unlikely(ret))
