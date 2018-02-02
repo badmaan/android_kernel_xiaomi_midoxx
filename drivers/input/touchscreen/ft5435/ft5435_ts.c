@@ -491,10 +491,13 @@ static ssize_t tp_glove_id_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
 	struct ft5435_ts_data *data = NULL;
+	int ret;
 
 	data = dev_get_drvdata(dev);
 
-	return sprintf(buf, "%d", data->glove_id);
+	ret = snprintf(buf, 50, "glove_id show:%d\n", data->glove_id);
+
+	return ret;
 }
 
 static ssize_t tp_glove_id_store(struct device *dev,
@@ -532,9 +535,9 @@ static ssize_t tp_glove_id_store(struct device *dev,
 		pr_err("invalid  command! \n");
 		return -EPERM;
 	}
-	pr_debug("set glove_id = %d \n", data->glove_id);
+	printk("set glove_id = %d \n", data->glove_id);
 	ft5435_i2c_read(data->client, &txbuf[0], 1, &val_read, 1);
-	pr_debug("read glove_id = %d\n", val_read);
+	printk("read glove_id = %d\n", val_read);
 
 	return size;
 }
@@ -543,9 +546,8 @@ static DEVICE_ATTR(glove_enable, 0644, tp_glove_id_show, tp_glove_id_store);
 void tp_glove_register (struct ft5435_ts_data *data)
 {
 	int rc = 0;
-	struct class *tp_device_class = NULL;
-	tp_device_class = class_create(THIS_MODULE, "tp_glove");
-	tp_glove_dev = device_create(tp_device_class, NULL, 0, NULL, "device");
+
+	tp_glove_dev = device_create(tp_device_class, NULL, 0, NULL, "tp_glove");
 	if (IS_ERR(tp_glove_dev))
 		pr_err("Failed to create device(glove_ctrl)!\n");
 
@@ -555,7 +557,7 @@ void tp_glove_register (struct ft5435_ts_data *data)
 		pr_err("Failed to create device file(%s)!\n", dev_attr_glove_enable.attr.name);
 	dev_set_drvdata(tp_glove_dev, data);
 
-	pr_debug("~~~~~ %s enable!!!!!\n", __func__);
+	printk("~~~~~ %s enable!!!!!\n", __func__);
 
 }
 #endif
@@ -625,7 +627,7 @@ static void tp_prox_sensor_enable(struct i2c_client *client, int enable)
 
 	if (gpio_is_valid(g_ft5435_ts_data->pdata->reset_gpio)) {
 		gpio_set_value_cansleep(g_ft5435_ts_data->pdata->reset_gpio, 0);
-		pr_debug("reset tp ~~~ \n");
+		printk("reset tp ~~~ \n");
 		msleep(g_ft5435_ts_data->pdata->hard_rst_dly);
 		gpio_set_value_cansleep(g_ft5435_ts_data->pdata->reset_gpio, 1);
 	}
@@ -638,11 +640,11 @@ static void tp_prox_sensor_enable(struct i2c_client *client, int enable)
 	}
 	ret = ft5x0x_write_reg(client, 0xB0, state);
 	if (ret < 0)
-		pr_debug("[proxi_5206]write psensor switch command failed\n");
+		printk("[proxi_5206]write psensor switch command failed\n");
 	ft5x0x_read_reg(client, 0xB0, &state);
-	pr_debug(" proximity function status[0x%x]\n", state);
+	printk(" proximity function status[0x%x]\n", state);
 	if ((!enable) && (g_ft5435_ts_data->suspended) && (g_ft5435_ts_data->gesture_id > 0)) {
-		pr_debug("double click function enable again \n");
+		printk("double click function enable again \n");
 		ft_tp_suspend(g_ft5435_ts_data);
 	}
 
@@ -652,15 +654,15 @@ static int vps_set_enable(struct sensors_classdev *sensors_cdev, unsigned int en
 {
 	u8 status, reg_value;
 
-	pr_debug("FT vps_set_enable in. enable[%d]\n", enable);
+	printk("FT vps_set_enable in. enable[%d]\n", enable);
 	vps_ft5436->vps_enabled = enable ? 1 : 0;
 	if (enable == 1) {
 		ft5x0x_read_reg(g_ft5435_ts_data->client, 0xB0, &reg_value);
-		pr_debug("FT proxi_fts 0xB0 state value is0x%02X\n", reg_value);
+		printk("FT proxi_fts 0xB0 state value is0x%02X\n", reg_value);
 		if (!(reg_value&0x01))
 			tp_prox_sensor_enable(g_ft5435_ts_data->client, 1);
 		ft5x0x_read_reg(g_ft5435_ts_data->client, 0x01, &status);
-		pr_debug("FT 0x01 reg status[0x%x]\n", status);
+		printk("FT 0x01 reg status[0x%x]\n", status);
 		if (status == 0xC0) {
 			input_report_abs(vps_ft5436->proximity_dev, ABS_DISTANCE, 0);
 			input_sync(vps_ft5436->proximity_dev);
@@ -705,7 +707,7 @@ ssize_t ft_proximity_function_enable_store(struct device *pDevice, struct device
 	u32 nProximityMode;
 	if (pBuf != NULL) {
 		sscanf(pBuf, "%x", &nProximityMode);
-		pr_debug("nProximityMode = 0x%x\n", nProximityMode);
+		printk("nProximityMode = 0x%x\n", nProximityMode);
 		vps_ft5436->proximity_function = nProximityMode;
 		tp_prox_sensor_enable(g_ft5435_ts_data->client, nProximityMode);
 	}
@@ -721,17 +723,17 @@ static int sys_device_create(void)
 
 	virtual_proximity = class_create(THIS_MODULE, "virtual-proximity");
 	if (IS_ERR(virtual_proximity))
-		pr_debug("Failed to create class(virtual_proximity)!\n");
+		printk("Failed to create class(virtual_proximity)!\n");
 
 	virtual_proximity_device = device_create(virtual_proximity, NULL, 0, NULL, "device");
 	if (IS_ERR(virtual_proximity_device))
-		pr_debug("Failed to create device(virtual_proximity_device)!\n");
+		printk("Failed to create device(virtual_proximity_device)!\n");
 
 	if (device_create_file(virtual_proximity_device, &dev_attr_enable) < 0)
-		pr_debug("Failed to create device file(%s)!\n", dev_attr_enable.attr.name);
+		printk("Failed to create device file(%s)!\n", dev_attr_enable.attr.name);
 
 	if (device_create_file(virtual_proximity_device, &dev_attr_proximity) < 0)
-		pr_debug("Failed to create device file(%s)!\n", dev_attr_enable.attr.name);
+		printk("Failed to create device file(%s)!\n", dev_attr_enable.attr.name);
 
 	return 0;
 }
@@ -746,7 +748,7 @@ void ft5435_enable_leather_cover(void)
 		return ;
 	if (init_ok == 0)
 		return;
-	pr_debug("[wxc]%s\n", __func__);
+	printk("[wxc]%s\n", __func__);
 	data = g_ft5435_ts_data;
 
 	data->cover_on = 1;
@@ -763,7 +765,7 @@ void ft5435_disable_leather_cover(void)
 		return ;
 	if (init_ok == 0)
 		return;
-	pr_debug("[wxc]%s\n", __func__);
+	printk("[wxc]%s\n", __func__);
 	data = g_ft5435_ts_data;
 
 	data->cover_on = 0;
@@ -780,15 +782,15 @@ void ft5435_change_leather_cover_switch(struct work_struct *work)
 	data = g_ft5435_ts_data;
 
 	if (data->suspended) {
-		pr_debug(KERN_ERR"data->suspended, data->cover_on = %d \n", data->cover_on);
+		printk(KERN_ERR"data->suspended, data->cover_on = %d \n", data->cover_on);
 		return ;
 	}
 	if (ft_g_client == NULL)
 		return ;
 	ft5x0x_read_reg(ft_g_client, 0xc1, &cover_flag);
-	pr_debug("[Fu]%s cover_flag=%d, data->cover_on=%d\n", __func__, cover_flag, data->cover_on);
+	printk("[Fu]%s cover_flag=%d, data->cover_on=%d\n", __func__, cover_flag, data->cover_on);
 	if (cover_flag != data->cover_on) {
-		pr_debug(KERN_ERR"[Fu]%s: Write %d to 0xc1\n", __FUNCTION__, data->cover_on);
+		printk(KERN_ERR"[Fu]%s: Write %d to 0xc1\n", __FUNCTION__, data->cover_on);
 		ft5x0x_write_reg(ft_g_client, 0xc1, data->cover_on);
 	}
 }
@@ -803,7 +805,7 @@ void ft5435_enable_vr(void)
 		return ;
 	if (init_ok == 0)
 		return;
-	pr_debug("[wxc]%s\n", __func__);
+	printk("[wxc]%s\n", __func__);
 	data = g_ft5435_ts_data;
 
 	data->vr_on = 1;
@@ -819,7 +821,7 @@ void ft5435_disable_vr(void)
 		return ;
 	if (init_ok == 0)
 		return;
-	pr_debug("[wxc]%s\n", __func__);
+	printk("[wxc]%s\n", __func__);
 	data = g_ft5435_ts_data;
 
 	data->vr_on = 0;
@@ -836,15 +838,15 @@ void ft5435_change_vr_switch(struct work_struct *work)
 	data = g_ft5435_ts_data;
 
 	if (data->suspended) {
-		pr_debug(KERN_ERR"data->suspended, data->vr_on = %d \n", data->vr_on);
+		printk(KERN_ERR"data->suspended, data->vr_on = %d \n", data->vr_on);
 		return ;
 	}
 	if (ft_g_client == NULL)
 		return ;
 	ft5x0x_read_reg(ft_g_client, 0xc1, &vr_flag);
-	pr_debug("[wxc]%s cover_flag=%d, data->vr_on=%d\n", __func__, vr_flag, data->vr_on);
+	printk("[wxc]%s cover_flag=%d, data->vr_on=%d\n", __func__, vr_flag, data->vr_on);
 	if (vr_flag != data->vr_on) {
-		pr_debug(KERN_ERR"[wxc]%s: Write %d to 0xc1\n", __FUNCTION__, data->vr_on);
+		printk(KERN_ERR"[wxc]%s: Write %d to 0xc1\n", __FUNCTION__, data->vr_on);
 		ft5x0x_write_reg(ft_g_client, 0xc1, data->vr_on);
 	}
 }
@@ -895,7 +897,7 @@ void ft5435_change_scanning_frq_switch(struct work_struct *work)
 	data = container_of(work, struct ft5435_ts_data, work);
 
 	if (data->suspended) {
-		pr_debug(KERN_ERR"changer_in  = %d \n", data->charger_in);
+		printk(KERN_ERR"changer_in  = %d \n", data->charger_in);
 		return ;
 	}
 	if (ft_g_client == NULL)
@@ -903,7 +905,7 @@ void ft5435_change_scanning_frq_switch(struct work_struct *work)
 	ft5x0x_read_reg(ft_g_client, 0x8b, &charger_in_flag);
 
 	if (charger_in_flag != data->charger_in) {
-		pr_debug(KERN_ERR"[ft5435]%s: Write %d to 0x8b\n", __FUNCTION__, data->charger_in);
+		printk(KERN_ERR"[ft5435]%s: Write %d to 0x8b\n", __FUNCTION__, data->charger_in);
 		ft5x0x_write_reg(ft_g_client, 0x8b, data->charger_in);
 	}
 }
@@ -941,7 +943,7 @@ static void ft5435_update_fw_vendor_id(struct ft5435_ts_data *data)
 	err = ft5435_i2c_read(client, &reg_addr, 1, &data->fw_vendor_id, 1);
 	if (err < 0)
 		dev_err(&client->dev, "fw vendor id read failed");
-	pr_debug("[Fu]fw_vendor_id=0x%x\n", data->fw_vendor_id);
+	printk("[Fu]fw_vendor_id=0x%x\n", data->fw_vendor_id);
 }
 
 
@@ -1051,7 +1053,7 @@ static int ft_tp_interrupt(struct ft5435_ts_data *data)
 {
 	int rc = 0;
 	u8 reg_value, reg = 0x00;
-	pr_debug("[FTS]%s start\n", __func__);
+	printk("[FTS]%s start\n", __func__);
 	reg = FT5435_REG_GESTURE_STATE;
 	rc = ft5435_i2c_read(data->client, &reg, 1, &reg_value, 1);
 	if (rc < 0) {
@@ -1064,9 +1066,9 @@ static int ft_tp_interrupt(struct ft5435_ts_data *data)
 		input_sync(data->input_dev);
 		input_report_key(data->input_dev, KEY_WAKEUP, 0);
 		input_sync(data->input_dev);
-		pr_debug("[FTS]gesture KEY_POWER\n");
+		printk("[FTS]gesture KEY_POWER\n");
 	} else {
-		pr_debug("[FTS]gesture_id, reg_value=0x%x \n", reg_value);
+		printk("[FTS]gesture_id, reg_value=0x%x \n", reg_value);
 	}
 
 	return rc;
@@ -1099,7 +1101,7 @@ static irqreturn_t ft5435_ts_interrupt(int irq, void *dev_id)
 	if (gesture_func_on) {
 		ret = ft5x0x_read_reg(data->client, 0xd0, &state);
 		if (ret < 0)
-			pr_debug("[FTS]read value fail\n");
+			printk("[FTS]read value fail\n");
 
 		if (state == 1) {
 			ft_tp_interrupt(data);
@@ -1113,20 +1115,20 @@ static irqreturn_t ft5435_ts_interrupt(int irq, void *dev_id)
 #ifdef CONFIG_TOUCHPANEL_PROXIMITY_SENSOR
 	if (vps_ft5436->vps_enabled) {
 		ft5x0x_read_reg(data->client, 0xB0, &reg_value);
-		pr_debug("proxi_fts 0xB0 state value is0x%02X\n", reg_value);
+		printk("proxi_fts 0xB0 state value is0x%02X\n", reg_value);
 		if (!(reg_value&0x01))
 			tp_prox_sensor_enable(data->client, 1);
 		ft5x0x_read_reg(data->client, 0x01, &proximity_status);
-		pr_debug("FT 0x01 reg proximity_status[0x%x]--%s\n", proximity_status, __FUNCTION__);
+		printk("FT 0x01 reg proximity_status[0x%x]--%s\n", proximity_status, __FUNCTION__);
 		if (proximity_status == 0xC0) {
 			input_report_abs(vps_ft5436->proximity_dev, ABS_DISTANCE, 0);
 			input_sync(vps_ft5436->proximity_dev);
-			pr_debug("[Fu]close\n");
+			printk("[Fu]close\n");
 		} else if (proximity_status == 0xE0) {
 			wake_lock_timeout(&ft5436_wakelock, 1*HZ);
 			input_report_abs(vps_ft5436->proximity_dev, ABS_DISTANCE, 1);
 			input_sync(vps_ft5436->proximity_dev);
-			pr_debug("[Fu]leave\n");
+			printk("[Fu]leave\n");
 		}
 	}
 #endif
@@ -1396,7 +1398,7 @@ static int  ft_tp_suspend(struct ft5435_ts_data *data)
 	int i = 0;
 	u8 state = 0;
 
-	pr_debug("[FTS] FTS_GESTRUE suspend\n");
+	printk("[FTS] FTS_GESTRUE suspend\n");
 	ft5x0x_write_reg(data->client, 0xd0, 0x01);
 	ft5x0x_write_reg(data->client, 0xd1, 0xff);
 	ft5x0x_write_reg(data->client, 0xd2, 0xff);
@@ -1407,11 +1409,11 @@ static int  ft_tp_suspend(struct ft5435_ts_data *data)
 	msleep(10);
 
 	for (i = 0; i < 10; i++) {
-		pr_debug("[FTS]tpd_suspend4 %d\t", i);
+		printk("[FTS]tpd_suspend4 %d\t", i);
 		ft5x0x_read_reg(data->client, 0xd0, &state);
 
 		if (state == 1) {
-			pr_debug("[FTS]TPD gesture write 0x01 OK\n");
+			printk("[FTS]TPD gesture write 0x01 OK\n");
 			break;
 		} else {
 			ft5x0x_write_reg(data->client, 0xd0, 0x01);
@@ -1427,11 +1429,11 @@ static int  ft_tp_suspend(struct ft5435_ts_data *data)
 
 	if (i >= 9)
 	{
-		pr_debug("[FTS]TPD gesture write 0x01 to d0 fail \n");
+		printk("[FTS]TPD gesture write 0x01 to d0 fail \n");
 	}
 
 	data->suspended = true;
-	pr_debug("[FTS] FTS_GESTRUE suspend end\n");
+	printk("[FTS] FTS_GESTRUE suspend end\n");
 	return 0;
 }
 #endif
@@ -1482,10 +1484,10 @@ static int ft5435_ts_suspend(struct device *dev)
 			ft5x0x_read_reg(data->client, 0xa5, &state);
 
 			if ((state != 0) && (state != 1)) {
-				pr_debug("[FTS]Ft5435 TPDwrite  OK [%d]\n", i);
+				printk("[FTS]Ft5435 TPDwrite  OK [%d]\n", i);
 				break;
 			} else {
-				pr_debug("[FTS]Ft5435 TPDwrite  Error[%d]\n", i);
+				printk("[FTS]Ft5435 TPDwrite  Error[%d]\n", i);
 			}
 		}
 	}
@@ -1807,7 +1809,7 @@ static int ft5435_fw_upgrade_start(struct i2c_client *client,
 		w_buf[0] = 0x6a;
 		r_buf[0] = r_buf[1] = 0x00;
 		ft5435_i2c_read(client, w_buf, 1, r_buf, 2);
-		pr_debug("1~~~~1 r_buf[0] =%x  r_buf[1] = %x  \n ", r_buf[0], r_buf[1]);
+		printk("1~~~~1 r_buf[0] =%x  r_buf[1] = %x  \n ", r_buf[0], r_buf[1]);
 		if (0xF0 == r_buf[0] && 0xAA == r_buf[1])
 			break;
 		msleep(50);
@@ -1817,18 +1819,18 @@ static int ft5435_fw_upgrade_start(struct i2c_client *client,
 	w_buf[1] = (u8) ((data_len >> 16) & 0xFF);
 	w_buf[2] = (u8) ((data_len >> 8) & 0xFF);
 	w_buf[3] = (u8) (data_len & 0xFF);
-	pr_debug("data_len = %d \n", data_len);
+	printk("data_len = %d \n", data_len);
 	ft5435_i2c_write(client, w_buf, 4);
 
 
 /*********Step 5:write firmware(FW) to ctpm flash*********/
 	fw_ecc = 0;
-	pr_debug("Step 5:write firmware(FW) to ctpm flash\n");
+	printk("Step 5:write firmware(FW) to ctpm flash\n");
 	temp = 0;
 	pkt_num = (data_len) / FT_FW_PKT_LEN;
 	pkt_buf[0] = 0xbf;
 	pkt_buf[1] = 0x00;
-	pr_debug("@@@@@pkt_num = %x \n", pkt_num);
+	printk("@@@@@pkt_num = %x \n", pkt_num);
 	for (j = 0; j < pkt_num; j++) {
 		temp = j * FT_FW_PKT_LEN;
 		pkt_buf[2] = (u8) (temp >> 8);
@@ -1871,7 +1873,7 @@ static int ft5435_fw_upgrade_start(struct i2c_client *client,
 			w_buf[0] = 0x6a;
 			r_buf[0] = r_buf[1] = 0x00;
 			ft5435_i2c_read(client, w_buf, 1, r_buf, 2);
-			pr_debug("@~~~~@ r_buf[0] =%x  r_buf[1] = %x  j =%x \n ", r_buf[0], r_buf[1], j);
+			printk("@~~~~@ r_buf[0] =%x  r_buf[1] = %x  j =%x \n ", r_buf[0], r_buf[1], j);
 			if ((j + 0x1000) == (((r_buf[0]) << 8) | r_buf[1]))
 				break;
 			msleep(1);
@@ -1882,7 +1884,7 @@ static int ft5435_fw_upgrade_start(struct i2c_client *client,
 
 	/*********Step 6: read out checksum***********************/
 	/*send the opration head */
-	pr_debug("Step 6: read out checksum\n");
+	printk("Step 6: read out checksum\n");
 	w_buf[0] = 0x64;
 	ft5435_i2c_write(client, w_buf, 1);
 	msleep(300);
@@ -1902,7 +1904,7 @@ static int ft5435_fw_upgrade_start(struct i2c_client *client,
 		w_buf[0] = 0x6a;
 		r_buf[0] = r_buf[1] = 0x00;
 		ft5435_i2c_read(client, w_buf, 1, r_buf, 2);
-		pr_debug("~~~~ r_buf[0] =%x  r_buf[1] = %x \n ", r_buf[0], r_buf[1]);
+		printk("~~~~ r_buf[0] =%x  r_buf[1] = %x \n ", r_buf[0], r_buf[1]);
 		if (0xF0 == r_buf[0] && 0x55 == r_buf[1])
 			break;
 		msleep(1);
@@ -1917,7 +1919,7 @@ static int ft5435_fw_upgrade_start(struct i2c_client *client,
 
 		return -EIO;
 	}
-	pr_debug(KERN_WARNING "checksum %x %x \n", r_buf[0], fw_ecc);
+	printk(KERN_WARNING "checksum %x %x \n", r_buf[0], fw_ecc);
 	/* reset */
 	w_buf[0] = FT_REG_RESET_FW;
 	ft5435_i2c_write(client, w_buf, 1);
@@ -1941,11 +1943,11 @@ static int ft5x46_fw_upgrade_start(struct i2c_client *client,
 	u8 fw_ecc;
 	int i_ret;
 
-	pr_debug("%s\n", __func__);
+	printk("%s\n", __func__);
 	i_ret = hid_to_i2c(client);
 
 	if (i_ret == 0)
-		pr_debug("[FTS] hid1 change to i2c fail ! \n");
+		printk("[FTS] hid1 change to i2c fail ! \n");
 
 	for (i = 0, j = 0; i < FT_UPGRADE_LOOP; i++) {
 		msleep(FT_EARSE_DLY_MS);
@@ -1962,7 +1964,7 @@ static int ft5x46_fw_upgrade_start(struct i2c_client *client,
 		i_ret = hid_to_i2c(client);
 
 		if (i_ret == 0)
-			pr_debug("[FTS] hid%d change to i2c fail ! \n", i);
+			printk("[FTS] hid%d change to i2c fail ! \n", i);
 
 		msleep(10);
 
@@ -1972,7 +1974,7 @@ static int ft5x46_fw_upgrade_start(struct i2c_client *client,
 		i_ret = ft5435_i2c_write(client, w_buf, 2);
 
 		if (i_ret < 0) {
-			pr_debug("[FTS] failed writing  0x55 and 0xaa ! \n");
+			printk("[FTS] failed writing  0x55 and 0xaa ! \n");
 			continue;
 		}
 
@@ -1988,11 +1990,11 @@ static int ft5x46_fw_upgrade_start(struct i2c_client *client,
 		ft5435_i2c_read(client, w_buf, 4, r_buf, 2);
 
 		if (r_buf[0] == 0x54 && r_buf[1] == 0x2c) {
-			pr_debug("Upgrade ID mismatch(%d), IC=0x%x 0x%x, info=0x%x 0x%x\n",
+			printk("Upgrade ID mismatch(%d), IC=0x%x 0x%x, info=0x%x 0x%x\n",
 				i, r_buf[0], r_buf[1], info.upgrade_id_1, info.upgrade_id_2);
 			break;
 		} else{
-			pr_debug("[FTS] Step 3: CTPM ID,ID1 = 0x%x,ID2 = 0x%x\n",
+			printk("[FTS] Step 3: CTPM ID,ID1 = 0x%x,ID2 = 0x%x\n",
 				r_buf[0], r_buf[1]);
 			continue;
 		}
@@ -2004,7 +2006,7 @@ static int ft5x46_fw_upgrade_start(struct i2c_client *client,
 	}
 
 	/******Step 4:erase app and panel paramenter area******/
-	pr_debug("Step 4:erase app and panel paramenter area\n");
+	printk("Step 4:erase app and panel paramenter area\n");
 	w_buf[0] = 0x61;
 	ft5435_i2c_write(client, w_buf, 1);
 	msleep(1350);
@@ -2029,7 +2031,7 @@ static int ft5x46_fw_upgrade_start(struct i2c_client *client,
 
 	/*********Step 5:write firmware(FW) to ctpm flash*********/
 	fw_ecc = 0;
-	pr_debug("Step 5:write firmware(FW) to ctpm flash\n");
+	printk("Step 5:write firmware(FW) to ctpm flash\n");
 	temp = 0;
 	pkt_num = (data_len) / FT_FW_PKT_LEN;
 	pkt_buf[0] = 0xbf;
@@ -2091,7 +2093,7 @@ static int ft5x46_fw_upgrade_start(struct i2c_client *client,
 
 /*********Step 6: read out checksum***********************/
 	/*send the opration head */
-	pr_debug("Step 6: read out checksum\n");
+	printk("Step 6: read out checksum\n");
 	w_buf[0] = 0x64;
 	ft5435_i2c_write(client, w_buf, 1);
 	msleep(300);
@@ -2125,10 +2127,10 @@ static int ft5x46_fw_upgrade_start(struct i2c_client *client,
 
 		return -EIO;
 	}
-	pr_debug(KERN_WARNING "checksum %X %X \n", r_buf[0], fw_ecc);
+	printk(KERN_WARNING "checksum %X %X \n", r_buf[0], fw_ecc);
 
 	/*********Step 7: reset the new FW***********************/
-	pr_debug("Step 7: reset the new FW\n");
+	printk("Step 7: reset the new FW\n");
 	w_buf[0] = 0x07;
 	ft5435_i2c_write(client, w_buf, 1);
 	msleep(130);
@@ -2201,7 +2203,7 @@ static int ft5435_fw_upgrade_arbitrate(struct i2c_client *client)
 	w_buf[3] = 0x40;
 	ft5435_i2c_read(client, w_buf, 4, r_buf, 1);
 	ts_data->fw_compat = r_buf[0];
-	pr_debug("%s line=%d, fw_compat=%x \n", __func__, __LINE__, ts_data->fw_compat);
+	printk("%s line=%d, fw_compat=%x \n", __func__, __LINE__, ts_data->fw_compat);
 
 	/* reset */
 	w_buf[0] = FT_REG_RESET_FW;
@@ -2223,7 +2225,7 @@ static int __init get_boot_mode(char *str)
 	if (strcmp("boot_with_recovery", str) == 0)
 		booting_into_recovery = 1;
 
-	pr_debug("zakk: booting_into_recovery=%d\n", booting_into_recovery);
+	printk("zakk: booting_into_recovery=%d\n", booting_into_recovery);
 	return 0;
 }
 __setup("androidboot.boot_reason=", get_boot_mode);
@@ -2244,14 +2246,14 @@ static int ft5435_fw_upgrade(struct device *dev, bool force)
 #if defined(FOCALTECH_FW_COMPAT)
 	rc = ft5435_fw_upgrade_arbitrate(data->client);
 	if (rc < 0) {
-		pr_debug(">>-- distinguish tp failed ! \n");
+		printk(">>-- distinguish tp failed ! \n");
 		return rc;
 	}
 #endif
 
 	ft5435_update_fw_vendor_id(data);
 
-	pr_debug("[Fu]%s, booting_into_recovery=%d\n", __func__, booting_into_recovery);
+	printk("[Fu]%s, booting_into_recovery=%d\n", __func__, booting_into_recovery);
 
 	rc = request_firmware(&fw, data->fw_name, dev);
 
@@ -2278,9 +2280,9 @@ static int ft5435_fw_upgrade(struct device *dev, bool force)
 	fw_file_min = FT_FW_FILE_MIN_VER(fw);
 	fw_file_sub_min = FT_FW_FILE_SUB_MIN_VER(fw);
 
-	pr_debug("[Fu]Current firmware: %d.%d.%d", data->fw_ver[0],
+	printk("[Fu]Current firmware: %d.%d.%d", data->fw_ver[0],
 				data->fw_ver[1], data->fw_ver[2]);
-	pr_debug("[Fu]New firmware: %d.%d.%d", fw_file_maj,
+	printk("[Fu]New firmware: %d.%d.%d", fw_file_maj,
 				fw_file_min, fw_file_sub_min);
 
 	if (force)
@@ -2288,7 +2290,7 @@ static int ft5435_fw_upgrade(struct device *dev, bool force)
 
 	else if (fw_file_maj == 18 && data->fw_ver[0] != 18) {
 		fw_upgrade = true;
-		pr_debug("\n[wxc]roll back firmware to v12 for temp\n");
+		printk("\n[wxc]roll back firmware to v12 for temp\n");
 	}
 
 	else if ((data->fw_ver[0] < fw_file_maj) &&
@@ -2350,7 +2352,7 @@ static unsigned char ft5435_fw_Vid_get_from_boot(struct i2c_client *client)
 		i_ret = hid_to_i2c(client);
 
 		if (i_ret == 0)
-			pr_debug("[FTS] hid%d change to i2c fail ! \n", i);
+			printk("[FTS] hid%d change to i2c fail ! \n", i);
 
 		msleep(10);
 
@@ -2361,7 +2363,7 @@ static unsigned char ft5435_fw_Vid_get_from_boot(struct i2c_client *client)
 		i_ret = ft5435_i2c_write(client, w_buf, 2);
 
 		if (i_ret < 0) {
-			pr_debug("[FTS] failed writing  0x55 and 0xaa ! \n");
+			printk("[FTS] failed writing  0x55 and 0xaa ! \n");
 			continue;
 		}
 
@@ -2378,12 +2380,12 @@ static unsigned char ft5435_fw_Vid_get_from_boot(struct i2c_client *client)
 
 		if (r_buf[0] == 0x54 && r_buf[1] == 0x2c) {
 			/*
-			pr_debug("Upgrade ID mismatch(%d), IC=0x%x 0x%x, info=0x%x 0x%x\n",
+			printk("Upgrade ID mismatch(%d), IC=0x%x 0x%x, info=0x%x 0x%x\n",
 				i, r_buf[0], r_buf[1],info.upgrade_id_1, info.upgrade_id_2);
 				*/
 			break;
 		} else{
-			pr_debug("[FTS] Step 3: CTPM ID,ID1 = 0x%x,ID2 = 0x%x\n",
+			printk("[FTS] Step 3: CTPM ID,ID1 = 0x%x,ID2 = 0x%x\n",
 				r_buf[0], r_buf[1]);
 			continue;
 		}
@@ -2394,7 +2396,7 @@ static unsigned char ft5435_fw_Vid_get_from_boot(struct i2c_client *client)
 		return -EIO;
 	}
 
-	pr_debug("FTS_UPGRADE_LOOP ok is  i = %d \n", i);
+	printk("FTS_UPGRADE_LOOP ok is  i = %d \n", i);
 
 	msleep(10);
 	auc_i2c_write_buf[0] = 0x03;
@@ -2404,22 +2406,22 @@ static unsigned char ft5435_fw_Vid_get_from_boot(struct i2c_client *client)
 		auc_i2c_write_buf[3] = 0x83;
 		i_ret = ft5435_i2c_write(client, auc_i2c_write_buf, 4);
 		if (i_ret < 0) {
-			pr_debug("[FTS] Step 4: read lcm id from flash error when i2c write, i_ret = %d\n", i_ret);
+			printk("[FTS] Step 4: read lcm id from flash error when i2c write, i_ret = %d\n", i_ret);
 			continue;
 		}
 		i_ret = ft5435_i2c_read(client, auc_i2c_write_buf, 0, r_buf, 2);
 		if (i_ret < 0) {
-			pr_debug("[FTS] Step 4: read lcm id from flash error when i2c write, i_ret = %d\n", i_ret);
+			printk("[FTS] Step 4: read lcm id from flash error when i2c write, i_ret = %d\n", i_ret);
 			continue;
 		}
 
 		vid = r_buf[1];
 
-		pr_debug("%s: REG VAL ID1 = 0x%x, ID2 = 0x%x\n", __func__, r_buf[0], r_buf[1]);
+		printk("%s: REG VAL ID1 = 0x%x, ID2 = 0x%x\n", __func__, r_buf[0], r_buf[1]);
 		break;
 	}
 
-	pr_debug("%s: reset the tp\n", __func__);
+	printk("%s: reset the tp\n", __func__);
 	auc_i2c_write_buf[0] = 0x07;
 	ft5435_i2c_write(client, auc_i2c_write_buf, 1);
 	msleep(300);
@@ -2436,7 +2438,7 @@ static int ft5435_fw_upgrade_by_array_data(struct device *dev, char *fw_data, in
 	char *pfw_data = fw_data;
 	int fw_size = size;
 
-	pr_debug("%s, suspended=%d\n", __func__, data->suspended);
+	printk("%s, suspended=%d\n", __func__, data->suspended);
 	if (data->suspended) {
 		dev_err(dev, "Device is in suspend state: Exit FW upgrade\n");
 		return -EBUSY;
@@ -2500,7 +2502,7 @@ static int ft5435_fw_upgrade_by_array_data(struct device *dev, char *fw_data, in
 
 rel_fw:
 	kfree(fw);
-	pr_debug("%s done\n", __func__);
+	printk("%s done\n", __func__);
 	return rc;
 }
 
@@ -2539,7 +2541,7 @@ static unsigned char ft5435_fw_LockDownInfo_get_from_boot(struct i2c_client *cli
 
 	int i_ret;
 
-	pr_debug("[fts]%s, fw_vendor_id=0x%02x\n", __func__, fts_fw_vendor_id);
+	printk("[fts]%s, fw_vendor_id=0x%02x\n", __func__, fts_fw_vendor_id);
 	i_ret = hid_to_i2c(client);
 
 	for (i = 0; i < FT_UPGRADE_LOOP; i++) {
@@ -2557,7 +2559,7 @@ static unsigned char ft5435_fw_LockDownInfo_get_from_boot(struct i2c_client *cli
 		i_ret = hid_to_i2c(client);
 
 		if (i_ret == 0)
-			pr_debug("[FTS] hid%d change to i2c fail ! \n", i);
+			printk("[FTS] hid%d change to i2c fail ! \n", i);
 
 		msleep(10);
 
@@ -2567,7 +2569,7 @@ static unsigned char ft5435_fw_LockDownInfo_get_from_boot(struct i2c_client *cli
 		i_ret = ft5435_i2c_write(client, w_buf, 2);
 
 		if (i_ret < 0) {
-			pr_debug("[FTS] failed writing  0x55 and 0xaa ! \n");
+			printk("[FTS] failed writing  0x55 and 0xaa ! \n");
 			continue;
 		}
 
@@ -2584,12 +2586,12 @@ static unsigned char ft5435_fw_LockDownInfo_get_from_boot(struct i2c_client *cli
 
 		if (r_buf[0] == 0x54 && r_buf[1] == 0x2c) {
 			/*
-			pr_debug("Upgrade ID mismatch(%d), IC=0x%x 0x%x, info=0x%x 0x%x\n",
+			printk("Upgrade ID mismatch(%d), IC=0x%x 0x%x, info=0x%x 0x%x\n",
 				i, r_buf[0], r_buf[1],info.upgrade_id_1, info.upgrade_id_2);
 				*/
 			break;
 		} else{
-			pr_debug("[FTS] Step 3: CTPM ID,ID1 = 0x%x,ID2 = 0x%x\n",
+			printk("[FTS] Step 3: CTPM ID,ID1 = 0x%x,ID2 = 0x%x\n",
 				r_buf[0], r_buf[1]);
 			continue;
 		}
@@ -2600,7 +2602,7 @@ static unsigned char ft5435_fw_LockDownInfo_get_from_boot(struct i2c_client *cli
 		return -EIO;
 	}
 
-	pr_debug("%s, FTS_UPGRADE_LOOP ok is  i = %d \n", __func__, i);
+	printk("%s, FTS_UPGRADE_LOOP ok is  i = %d \n", __func__, i);
 
 	/********* Step 4: read project code from app param area ***********************/
 	msleep(10);
@@ -2611,25 +2613,25 @@ static unsigned char ft5435_fw_LockDownInfo_get_from_boot(struct i2c_client *cli
 		auc_i2c_write_buf[3] = 0xa0;
 		i_ret = ft5435_i2c_write(client, auc_i2c_write_buf, 4);
 		if (i_ret < 0) {
-			pr_debug("[FTS] Step 4: read lcm id from flash error when i2c write, i_ret = %d\n", i_ret);
+			printk("[FTS] Step 4: read lcm id from flash error when i2c write, i_ret = %d\n", i_ret);
 			continue;
 		}
 			msleep(10);
 		i_ret = ft5435_i2c_read(client, auc_i2c_write_buf, 0, r_buf, 8);
 		if (i_ret < 0) {
-			pr_debug("[FTS] Step 4: read lcm id from flash error when i2c write, i_ret = %d\n", i_ret);
+			printk("[FTS] Step 4: read lcm id from flash error when i2c write, i_ret = %d\n", i_ret);
 			continue;
 		}
 
 		for (j = 0; j < 8; j++) {
-			pr_debug("%s: REG VAL = 0x%02x, j=%d\n", __func__, r_buf[j], j);
+			printk("%s: REG VAL = 0x%02x, j=%d\n", __func__, r_buf[j], j);
 		}
 		sprintf(pProjectCode, "%02x%02x%02x%02x%02x%02x%02x%02x", \
 				r_buf[0], r_buf[1], r_buf[2], r_buf[3], r_buf[4], r_buf[5], r_buf[6], r_buf[7]);
 		break;
 	}
 
-	pr_debug("%s: reset the tp\n", __func__);
+	printk("%s: reset the tp\n", __func__);
 	auc_i2c_write_buf[0] = 0x07;
 	ft5435_i2c_write(client, auc_i2c_write_buf, 1);
 	msleep(300);
@@ -2971,34 +2973,34 @@ static int ft5435_get_dt_vkey(struct device *dev, struct ft5435_ts_platform_data
 
 	sprintf(name, "focal,virtual_key_1");
 	prop = of_find_property(np, name, NULL);
-	pr_debug("[%s]000\n", __FUNCTION__);
+	printk("[%s]000\n", __FUNCTION__);
 	if (!prop)
 		return -EINVAL;
-	pr_debug("[%s]111\n", __FUNCTION__);
+	printk("[%s]111\n", __FUNCTION__);
 	if (!prop->value)
 		return -ENODATA;
-	pr_debug("[%s]222\n", __FUNCTION__);
+	printk("[%s]222\n", __FUNCTION__);
 	coords_size = prop->length / sizeof(u32);
 	if (coords_size != pdata->num_virkey) {
-		pr_debug("[%s]invalid %s\n", __FUNCTION__, name);
+		printk("[%s]invalid %s\n", __FUNCTION__, name);
 		return -EINVAL;
 	}
-	pr_debug("[%s]333\n", __FUNCTION__);
+	printk("[%s]333\n", __FUNCTION__);
 	for (i = 0; i < pdata->num_virkey; i++) {
 		sprintf(name, "focal,virtual_key_%d", i+1);
 		rc = of_property_read_u32_array(np, name, coords, coords_size);
 		if (rc && (rc != -EINVAL)) {
-			pr_debug("[%s]Unable to read %s\n", __FUNCTION__, name);
+			printk("[%s]Unable to read %s\n", __FUNCTION__, name);
 			return rc;
 		}
 
 		pdata->vkeys[i].keycode = coords[0];
 		pdata->vkeys[i].x = coords[1];
 		pdata->vkeys[i].y = coords[2];
-		pr_debug("[FTS]keycode = %d, x= %d, y=%d \n", pdata->vkeys[i].keycode,
+		printk("[FTS]keycode = %d, x= %d, y=%d \n", pdata->vkeys[i].keycode,
 			pdata->vkeys[i].x, pdata->vkeys[i].y);
 	}
-	pr_debug("[%s]5555\n", __FUNCTION__);
+	printk("[%s]5555\n", __FUNCTION__);
 	return 0;
 
 
@@ -3134,14 +3136,14 @@ static int ft5435_parse_dt(struct device *dev,
 
 	rc = of_property_read_u32(np, "focaltech,num-virtual-key", &temp_val);
 	if (rc && (rc != -EINVAL)) {
-		pr_debug("[%s]focaltech,num-virtual-key,dts parase failed\n", __FUNCTION__);
+		printk("[%s]focaltech,num-virtual-key,dts parase failed\n", __FUNCTION__);
 		return rc;
 	} else if (rc != -EINVAL) {
 		pdata->num_virkey = temp_val;
 	}
 	rc = ft5435_get_dt_vkey(dev, pdata);
 	if (rc) {
-		pr_debug("[%s]focaltech,ft5435_get_dt_vkey failed\n", __FUNCTION__);
+		printk("[%s]focaltech,ft5435_get_dt_vkey failed\n", __FUNCTION__);
 		return rc;
 	}
 
@@ -3312,12 +3314,12 @@ static int fts_get_channel_info(u8 *rx, u8 *tx)
 {
 	/*get rx and tx num*/
 	if (ft5x0x_read_reg(ft_g_client, 0x02, tx) < 0) {
-		pr_debug("%s: get tx info err!\n", __func__);
+		printk("%s: get tx info err!\n", __func__);
 		return -EPERM;
 	}
 
 	if (ft5x0x_read_reg(ft_g_client, 0x03, rx) < 0) {
-		pr_debug("%s: get rx info err!\n", __func__);
+		printk("%s: get rx info err!\n", __func__);
 		return -EPERM;
 	}
 
@@ -3334,7 +3336,7 @@ static ssize_t ft5435_rawdata_register(struct kobject *kobj,
 	u8 rx, tx;
 	int ret;
 
-pr_debug("ft5435_rawdata_register: start\n");
+printk("ft5435_rawdata_register: start\n");
 	mutex_lock(&data->input_dev->mutex);
 	if (data->loading_fw) {
 		p = sprintf(buf+p, "loading fw!!!");
@@ -3515,10 +3517,10 @@ static ssize_t ft5x0x_debug_write(struct file *filp, const char __user *buffer, 
 	}
 
 	proc_operate_mode = writebuf[0];
-	pr_debug("proc_operate_mode = %d\n", proc_operate_mode);
+	printk("proc_operate_mode = %d\n", proc_operate_mode);
 	switch (proc_operate_mode) {
 	case PROC_READ_REGISTER:
-	pr_debug("%s, %d:PROC_READ_REGISTER\n", __func__, __LINE__);
+	printk("%s, %d:PROC_READ_REGISTER\n", __func__, __LINE__);
 		writelen = 1;
 		ret = ft5435_i2c_write(client, writebuf + 1, writelen);
 		if (ret < 0) {
@@ -3527,7 +3529,7 @@ static ssize_t ft5x0x_debug_write(struct file *filp, const char __user *buffer, 
 		}
 		break;
 	case PROC_WRITE_REGISTER:
-	pr_debug("%s, %d:PROC_WRITE_REGISTER\n", __func__, __LINE__);
+	printk("%s, %d:PROC_WRITE_REGISTER\n", __func__, __LINE__);
 		writelen = 2;
 		ret = ft5435_i2c_write(client, writebuf + 1, writelen);
 		if (ret < 0) {
@@ -3536,13 +3538,13 @@ static ssize_t ft5x0x_debug_write(struct file *filp, const char __user *buffer, 
 		}
 		break;
 	case PROC_AUTOCLB:
-	pr_debug("%s, %d:PROC_AUTOCLB\n", __func__, __LINE__);
-		pr_debug("%s: autoclb\n", __func__);
+	printk("%s, %d:PROC_AUTOCLB\n", __func__, __LINE__);
+		printk("%s: autoclb\n", __func__);
 		fts_ctpm_auto_clb(client);
 		break;
 	case PROC_READ_DATA:
 	case PROC_WRITE_DATA:
-	pr_debug("%s, %d:PROC_READ_DATA, PROC_WRITE_DATA\n", __func__, __LINE__);
+	printk("%s, %d:PROC_READ_DATA, PROC_WRITE_DATA\n", __func__, __LINE__);
 		writelen = count - 1;
 		ret = ft5435_i2c_write(client, writebuf + 1, writelen);
 		if (ret < 0) {
@@ -3551,7 +3553,7 @@ static ssize_t ft5x0x_debug_write(struct file *filp, const char __user *buffer, 
 		}
 		break;
 	default:
-	pr_debug("%s, %d:default\n", __func__, __LINE__);
+	printk("%s, %d:default\n", __func__, __LINE__);
 		break;
 	}
 
@@ -3571,7 +3573,7 @@ static ssize_t ft5x0x_debug_read(struct file *file, char __user *page, size_t si
 	switch (proc_operate_mode) {
 	case PROC_UPGRADE:
 		/*after calling ft5x0x_debug_write to upgrade*/
-		pr_debug("%s, %d:PROC_UPGRADE\n", __func__, __LINE__);
+		printk("%s, %d:PROC_UPGRADE\n", __func__, __LINE__);
 		regaddr = 0xA6;
 		ret = ft5x0x_read_reg(client, regaddr, &regvalue);
 		if (ret < 0)
@@ -3586,11 +3588,11 @@ static ssize_t ft5x0x_debug_read(struct file *file, char __user *page, size_t si
 			dev_err(&client->dev, "%s:read iic error\n", __func__);
 			return ret;
 		}
-		pr_debug("%s, %d:PROC_READ_REGISTER, buf = %c\n", __func__, __LINE__, *buf);
+		printk("%s, %d:PROC_READ_REGISTER, buf = %c\n", __func__, __LINE__, *buf);
 		num_read_chars = 1;
 		break;
 	case PROC_READ_DATA:
-		pr_debug("%s, %d:PROC_READ_DATA\n", __func__, __LINE__);
+		printk("%s, %d:PROC_READ_DATA\n", __func__, __LINE__);
 		readlen = size;
 		ret = ft5435_i2c_read(client, NULL, 0, buf, readlen);
 		if (ret < 0) {
@@ -3601,10 +3603,10 @@ static ssize_t ft5x0x_debug_read(struct file *file, char __user *page, size_t si
 		num_read_chars = readlen;
 		break;
 	case PROC_WRITE_DATA:
-		pr_debug("%s, %d:PROC_WRITE_DATA\n", __func__, __LINE__);
+		printk("%s, %d:PROC_WRITE_DATA\n", __func__, __LINE__);
 		break;
 	default:
-		pr_debug("%s, %d:default\n", __func__, __LINE__);
+		printk("%s, %d:default\n", __func__, __LINE__);
 		break;
 	}
 
@@ -3761,13 +3763,13 @@ static int ft5435_ts_probe(struct i2c_client *client,
 	int i;
 	int retry = 3;
 	char tp_temp_info[80];
-	pr_debug("~~~~~ ft5435_ts_probe start\n");
+	printk("~~~~~ ft5435_ts_probe start\n");
 
 #if defined(CONFIG_FB)
-	pr_debug("[%s]CONFIG_FB is defined\n", __FUNCTION__);
+	printk("[%s]CONFIG_FB is defined\n", __FUNCTION__);
 #endif
 #if defined(CONFIG_PM)
-		pr_debug("[%s]CONFIG_PM is defined\n", __FUNCTION__);
+		printk("[%s]CONFIG_PM is defined\n", __FUNCTION__);
 #endif
 
 	if (client->dev.of_node) {
@@ -4095,11 +4097,11 @@ INIT_WORK(&data->work_vr, ft5435_change_vr_switch);
 	ft5435_update_fw_ver(data);
 	ft5435_update_fw_vendor_id(data);
 	fts_fw_vendor_id = data->fw_vendor_id;
-	pr_debug("upgrade,fts_fw_vendor_id=0x%02x\n",  data->fw_vendor_id);
+	printk("upgrade,fts_fw_vendor_id=0x%02x\n",  data->fw_vendor_id);
 #if defined(FOCALTECH_AUTO_UPGRADE)
 	if ((fts_fw_vendor_id != FTS_VENDOR_1) && (fts_fw_vendor_id != FTS_VENDOR_2)) {
 		fts_fw_vendor_id = ft5435_fw_Vid_get_from_boot(client);
-		pr_debug("get_Vid_from_boot, fw_vendor_id=0x%02x\n",  fts_fw_vendor_id);
+		printk("get_Vid_from_boot, fw_vendor_id=0x%02x\n",  fts_fw_vendor_id);
 	}
 
 	mutex_lock(&data->input_dev->mutex);
@@ -4110,7 +4112,7 @@ INIT_WORK(&data->work_vr, ft5435_change_vr_switch);
 		else if (fts_fw_vendor_id == FTS_VENDOR_2)
 			ft5435_fw_upgrade_by_array_data(&client->dev, firmware_data_vendor2, sizeof(firmware_data_vendor2), !data->pdata->no_force_update);
 		else
-			pr_debug("[FTS] FW unmatched,stop upgrade\n");
+			printk("[FTS] FW unmatched,stop upgrade\n");
 		data->loading_fw = false;
 	}
 	mutex_unlock(&data->input_dev->mutex);
@@ -4184,10 +4186,10 @@ g_ft5435_ts_data = data;
 #endif
 #ifdef FOCALTECH_LOCK_DOWN_INFO
 		ft5435_fw_LockDownInfo_get_from_boot(client, tp_lockdown_info);
-		pr_debug("tpd_probe, ft5x46_ctpm_LockDownInfo_get_from_boot, tp_lockdown_info=%s\n", tp_lockdown_info);
+		printk("tpd_probe, ft5x46_ctpm_LockDownInfo_get_from_boot, tp_lockdown_info=%s\n", tp_lockdown_info);
 		ctp_lockdown_status_proc = proc_create(CTP_PROC_LOCKDOWN_FILE, 0644, NULL, &ctp_lockdown_proc_fops);
 		if (ctp_lockdown_status_proc == NULL)
-			pr_debug("tpd, create_proc_entry ctp_lockdown_status_proc failed\n");
+			printk("tpd, create_proc_entry ctp_lockdown_status_proc failed\n");
 #endif
 
 #if defined(CONFIG_TCT_TP_FTDEBUG)
@@ -4216,7 +4218,7 @@ g_ft5435_ts_data = data;
 	sprintf(tp_temp_info, "%d", data->fw_ver[0]);
 	strcat(tp_info_summary, tp_temp_info);
 	strcat(tp_info_summary, "\0");
-	pr_debug("~~~~~ ft5435_ts_probe end\n");
+	printk("~~~~~ ft5435_ts_probe end\n");
 	return 0;
 
 free_debug_dir:
@@ -4364,21 +4366,21 @@ static struct i2c_driver ft5435_ts_driver = {
 
 static int __init ft5435_ts_init(void)
 {
-	pr_debug("tony_test:[%s]\n", __FUNCTION__);
+	printk("tony_test:[%s]\n", __FUNCTION__);
 	ft5435_wq = create_singlethread_workqueue("ft5435_wq");
 	if (!ft5435_wq) {
-		pr_debug("Creat ft5435 workqueue failed. \n");
+		printk("Creat ft5435 workqueue failed. \n");
 		return -ENOMEM;
 	}
 	ft5435_wq_cover = create_singlethread_workqueue("ft5435_wq_cover");
 	if (!ft5435_wq_cover) {
-		pr_debug("Creat ft5435_wq_cover workqueue failed. \n");
+		printk("Creat ft5435_wq_cover workqueue failed. \n");
 		return -ENOMEM;
 	}
 #if defined(VR_GLASS)
 	ft5435_wq_vr = create_singlethread_workqueue("ft5435_wq_vr");
 	if (!ft5435_wq_vr) {
-		pr_debug("Creat ft5435_wq_vr workqueue failed. \n");
+		printk("Creat ft5435_wq_vr workqueue failed. \n");
 		return -ENOMEM;
 	}
 #endif

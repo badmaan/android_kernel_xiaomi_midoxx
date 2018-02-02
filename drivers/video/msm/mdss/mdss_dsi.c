@@ -300,10 +300,11 @@ static int mdss_dsi_panel_power_off(struct mdss_panel_data *pdata)
 		pr_debug("reset disable: pinctrl not enabled\n");
 
 	if (2 == panel_suspend_reset_flag) {
-		msleep(1);
+		msleep(1); //dealy 2ms
 	}
-	if (3==panel_suspend_reset_flag) {
-		msleep(4);     //delay 4ms
+
+	if (3 == panel_suspend_reset_flag) {
+		msleep(4); //delay 4ms
 	}
 
 	ret = msm_dss_enable_vreg(
@@ -2777,16 +2778,11 @@ static struct device_node *mdss_dsi_find_panel_of_node(
 		if (!strcmp(panel_name, NONE_PANEL))
 			goto exit;
 
-		if (!strcmp(panel_name, "qcom,mdss_dsi_otm1911_fhd_video")){
+		if (!strcmp(panel_name, "qcom,mdss_dsi_otm1911_fhd_video"))
 			panel_suspend_reset_flag = 2;
-			}
-		if (!strcmp(panel_name, "qcom,mdss_dsi_ili9885_boe_fhd_video")) {
+
+		if (!strcmp(panel_name, "qcom,mdss_dsi_ili9885_boe_fhd_video"))
 			panel_suspend_reset_flag = 3;
-			}
-
-		pr_err("liujia print panel name = %d\n",
-			       panel_suspend_reset_flag);
-
 
 		mdss_node = of_parse_phandle(pdev->dev.of_node,
 			"qcom,mdss-mdp", 0);
@@ -4121,6 +4117,10 @@ int dsi_panel_device_register(struct platform_device *ctrl_pdev,
 		ctrl_pdata->check_status = mdss_dsi_reg_status_check;
 	else if (ctrl_pdata->status_mode == ESD_BTA)
 		ctrl_pdata->check_status = mdss_dsi_bta_status_check;
+	else if (ctrl_pdata->status_mode == ESD_TE_NT35596) {
+		ctrl_pdata->check_status = mdss_dsi_TE_NT35596_check;
+		init_te_irq(ctrl_pdata);
+	}
 
 	if (ctrl_pdata->status_mode == ESD_MAX) {
 		pr_err("%s: Using default BTA for ESD check\n", __func__);

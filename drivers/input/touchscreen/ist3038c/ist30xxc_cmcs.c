@@ -469,8 +469,8 @@ int ist30xx_parse_cmcs_buf(struct ist30xx_data *data, s16 *buf)
 	for (i = 0; i < tsp->ch_num.tx; i++) {
 		tsp_info(" ");
 		for (j = 0; j < tsp->ch_num.rx; j++)
-			pr_debug("%5d ", buf[i * tsp->ch_num.rx + j]);
-		pr_debug("\n");
+			printk("%5d ", buf[i * tsp->ch_num.rx + j]);
+		printk("\n");
 	}
 
 	return 0;
@@ -552,8 +552,8 @@ int ist30xx_apply_cmcs_slope(struct ist30xx_data *data, CMCS_BUF *cmcs_buf)
 	for (i = 0; i < tsp->ch_num.tx; i++) {
 		tsp_info(" ");
 		for (j = 0; j < tsp->ch_num.rx; j++)
-			pr_debug("%5d ", cmcs_buf->spec_min[idx1++]);
-		pr_debug("\n");
+			printk("%5d ", cmcs_buf->spec_min[idx1++]);
+		printk("\n");
 	}
 
 	idx1 = 0;
@@ -561,8 +561,8 @@ int ist30xx_apply_cmcs_slope(struct ist30xx_data *data, CMCS_BUF *cmcs_buf)
 	for (i = 0; i < tsp->ch_num.tx; i++) {
 		tsp_info(" ");
 		for (j = 0; j < tsp->ch_num.rx; j++)
-			pr_debug("%5d ", cmcs_buf->spec_max[idx1++]);
-		pr_debug("\n");
+			printk("%5d ", cmcs_buf->spec_max[idx1++]);
+		printk("\n");
 	}
 #endif
 
@@ -698,9 +698,9 @@ int ist30xx_apply_cmcs_slope(struct ist30xx_data *data, CMCS_BUF *cmcs_buf)
 		tsp_info(" ");
 		for (j = 0; j < width; j++) {
 			idx1 = (i * tsp->ch_num.rx) + j;
-			pr_debug("%5d ", pslope0[idx1]);
+			printk("%5d ", pslope0[idx1]);
 		}
-		pr_debug("\n");
+		printk("\n");
 	}
 
 	tsp_info("# slope1_y\n");
@@ -708,9 +708,9 @@ int ist30xx_apply_cmcs_slope(struct ist30xx_data *data, CMCS_BUF *cmcs_buf)
 		tsp_info(" ");
 		for (j = 0; j < width; j++) {
 			idx1 = (i * tsp->ch_num.rx) + j;
-			pr_debug("%5d ", pslope1[idx1]);
+			printk("%5d ", pslope1[idx1]);
 		}
-		pr_debug("\n");
+		printk("\n");
 	}
 
 	tsp_info("# slope0_gtx_x\n");
@@ -718,9 +718,9 @@ int ist30xx_apply_cmcs_slope(struct ist30xx_data *data, CMCS_BUF *cmcs_buf)
 		tsp_info(" ");
 		for (j = 0; j < width; j++) {
 			idx1 = (tsp->gtx.ch_num[i] * tsp->ch_num.rx) + j;
-			pr_debug("%5d ", pslope0[idx1]);
+			printk("%5d ", pslope0[idx1]);
 		}
-		pr_debug("\n");
+		printk("\n");
 	}
 
 	tsp_info("# slope1_gtx_y\n");
@@ -728,9 +728,9 @@ int ist30xx_apply_cmcs_slope(struct ist30xx_data *data, CMCS_BUF *cmcs_buf)
 		tsp_info(" ");
 		for (j = 0; j < width; j++) {
 			idx1 = (tsp->gtx.ch_num[i] * tsp->ch_num.rx) + j;
-			pr_debug("%5d ", pslope1[idx1]);
+			printk("%5d ", pslope1[idx1]);
 		}
-		pr_debug("\n");
+		printk("\n");
 	}
 #endif
 
