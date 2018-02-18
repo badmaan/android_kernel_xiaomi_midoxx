@@ -624,6 +624,9 @@ all: vmlinux
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
+KBUILD_CFLAGS	+= $(call cc-disable-warning, duplicate-decl-specifier)
+KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-variable,)
+KBUILD_CFLAGS	+= $(call cc-disable-warning,unused-function)
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
