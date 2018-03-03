@@ -539,7 +539,6 @@
 			qcom,fs-curr-ua = <20000>;
 			qcom,led-strings-list = [00 01];
 			qcom,cons-sync-write-delay-us = <1000>;
-			qcom,en-cabc;
 		};
 
 		flash_led: qcom,leds@d300 {

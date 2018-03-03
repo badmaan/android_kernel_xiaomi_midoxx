@@ -4043,9 +4043,8 @@ int mmc_cache_ctrl(struct mmc_host *host, u8 enable)
 
 	return err;
 
-
-
 }
+
 EXPORT_SYMBOL(mmc_cache_ctrl);
 #ifdef CONFIG_PM
 

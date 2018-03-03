@@ -166,7 +166,7 @@ static inline int mmc_blk_part_switch(struct mmc_card *card,
 				      struct mmc_blk_data *md);
 static int get_card_status(struct mmc_card *card, u32 *status, int retries);
 int mmc_blk_cmdq_switch(struct mmc_card *card,
-			       struct mmc_blk_data *md, bool enable);
+			struct mmc_blk_data *md, bool enable);
 
 static inline void mmc_blk_clear_packed(struct mmc_queue_req *mqrq)
 {
@@ -1012,7 +1012,7 @@ static const struct block_device_operations mmc_bdops = {
 };
 
 int mmc_blk_cmdq_switch(struct mmc_card *card,
-			       struct mmc_blk_data *md, bool enable)
+			struct mmc_blk_data *md, bool enable)
 {
 	int ret = 0;
 	bool cmdq_mode = !!mmc_card_cmdq(card);
@@ -4146,6 +4146,7 @@ static int mmc_blk_probe(struct mmc_card *card)
 		pm_runtime_set_active(&card->dev);
 		pm_runtime_enable(&card->dev);
 	}
+
 	mmc_ffu(card);
 	return 0;
 
