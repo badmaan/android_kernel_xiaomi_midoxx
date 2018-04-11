@@ -175,6 +175,14 @@ extern struct inode *sdcardfs_iget(struct super_block *sb,
 				 struct inode *lower_inode, userid_t id);
 extern int sdcardfs_interpose(struct dentry *dentry, struct super_block *sb,
 			    struct path *lower_path, userid_t id);
+#ifdef CONFIG_SDCARD_FS_PARTIAL_RELATIME
+extern void sdcardfs_update_relatime_flag(struct file *lower_file,
+	struct inode *lower_inode, uid_t writer_uid);
+#endif
+#ifdef CONFIG_SDCARD_FS_DIR_WRITER
+extern void sdcardfs_update_xattr_dirwriter(struct dentry *lower_dentry,
+	uid_t writer_uid);
+#endif
 
 /* file private data */
 struct sdcardfs_file_info {
@@ -201,7 +209,6 @@ struct sdcardfs_inode_info {
 	struct sdcardfs_inode_data *data;
 
 	/* top folder for ownership */
-	spinlock_t top_lock;
 	struct sdcardfs_inode_data *top_data;
 
 	struct inode vfs_inode;
@@ -221,7 +228,6 @@ struct sdcardfs_mount_options {
 	userid_t fs_user_id;
 	bool multiuser;
 	bool gid_derivation;
-	bool default_normal;
 	unsigned int reserved_mb;
 };
 
@@ -381,12 +387,7 @@ static inline struct sdcardfs_inode_data *data_get(
 static inline struct sdcardfs_inode_data *top_data_get(
 		struct sdcardfs_inode_info *info)
 {
-	struct sdcardfs_inode_data *top_data;
-
-	spin_lock(&info->top_lock);
-	top_data = data_get(info->top_data);
-	spin_unlock(&info->top_lock);
-	return top_data;
+	return data_get(info->top_data);
 }
 
 extern void data_release(struct kref *ref);
@@ -408,30 +409,23 @@ static inline void release_own_data(struct sdcardfs_inode_info *info)
 }
 
 static inline void set_top(struct sdcardfs_inode_info *info,
-			struct sdcardfs_inode_info *top_owner)
+			struct sdcardfs_inode_data *top)
 {
-	struct sdcardfs_inode_data *old_top;
-	struct sdcardfs_inode_data *new_top = NULL;
+	struct sdcardfs_inode_data *old_top = info->top_data;
 
-	if (top_owner)
-		new_top = top_data_get(top_owner);
-
-	spin_lock(&info->top_lock);
-	old_top = info->top_data;
-	info->top_data = new_top;
+	if (top)
+		data_get(top);
+	info->top_data = top;
 	if (old_top)
 		data_put(old_top);
-	spin_unlock(&info->top_lock);
 }
 
 static inline int get_gid(struct vfsmount *mnt,
-		struct super_block *sb,
 		struct sdcardfs_inode_data *data)
 {
-	struct sdcardfs_vfsmount_options *vfsopts = mnt->data;
-	struct sdcardfs_sb_info *sbi = SDCARDFS_SB(sb);
+	struct sdcardfs_vfsmount_options *opts = mnt->data;
 
-	if (vfsopts->gid == AID_SDCARD_RW && !sbi->options.default_normal)
+	if (opts->gid == AID_SDCARD_RW)
 		/* As an optimization, certain trusted system components only run
 		 * as owner but operate across all users. Since we're now handing
 		 * out the sdcard_rw GID only to trusted apps, we're okay relaxing
@@ -440,7 +434,7 @@ static inline int get_gid(struct vfsmount *mnt,
 		 */
 		return AID_SDCARD_RW;
 	else
-		return multiuser_get_uid(data->userid, vfsopts->gid);
+		return multiuser_get_uid(data->userid, opts->gid);
 }
 
 static inline int get_mode(struct vfsmount *mnt,
@@ -506,6 +500,37 @@ static inline void sdcardfs_put_real_lower(const struct dentry *dent,
 		sdcardfs_put_lower_path(dent, real_lower);
 }
 
+#if defined(CONFIG_SDCARD_FS_DIR_WRITER) || defined(CONFIG_SDCARD_FS_PARTIAL_RELATIME)
+static inline int wildcard_path_match(char *wildcard_name,
+	const char **dir_name, int name_count) {
+	int i, len = strlen(wildcard_name), depth = 0;
+	const char *dname;
+	char *wname;
+
+	for (i = 0; i < len; i++) {
+		if (wildcard_name[i] == '/')
+			continue;
+		depth++;
+		if (i == 0)
+			return -EINVAL;
+		if (name_count < depth)
+			return 0;
+
+		dname = dir_name[depth - 1];
+		wname = &wildcard_name[i];
+		while (wildcard_name[i] != '/' && i < len)
+			i++;
+		wildcard_name[i] = 0;
+		if (!strncmp(wname, "%s", 2) ||
+			(strlen(wname) == strlen(dname) &&
+			 !strncmp(wname, dname, strlen(dname))))
+			continue;
+		return 0;
+	}
+	return depth;
+}
+#endif
+
 extern struct mutex sdcardfs_super_list_lock;
 extern struct list_head sdcardfs_super_list;
 
@@ -514,6 +539,9 @@ extern appid_t get_appid(const char *app_name);
 extern appid_t get_ext_gid(const char *app_name);
 extern appid_t is_excluded(const char *app_name, userid_t userid);
 extern int check_caller_access_to_name(struct inode *parent_node, const struct qstr *name);
+#ifdef CONFIG_SDCARD_FS_DIR_WRITER
+extern int add_app_name_to_list(appid_t appid, char *list, int len);
+#endif
 extern int packagelist_init(void);
 extern void packagelist_exit(void);
 
@@ -527,7 +555,8 @@ struct limit_search {
 };
 
 extern void setup_derived_state(struct inode *inode, perm_t perm,
-			userid_t userid, uid_t uid);
+		userid_t userid, uid_t uid, bool under_android,
+		struct sdcardfs_inode_data *top);
 extern void get_derived_permission(struct dentry *parent, struct dentry *dentry);
 extern void get_derived_permission_new(struct dentry *parent, struct dentry *dentry, const struct qstr *name);
 extern void fixup_perms_recursive(struct dentry *dentry, struct limit_search *limit);
