@@ -52,7 +52,7 @@
 #include "debug.h"
 #include "xhci.h"
 
-#define DWC3_IDEV_CHG_MAX 1500
+#define DWC3_IDEV_CHG_MAX 1800
 #define DWC3_HVDCP_CHG_MAX 1900
 
 /* AHB2PHY register offsets */
