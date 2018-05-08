@@ -410,6 +410,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-tautological-compare -Wno-unused-const-variable \
 		   -Wno-misleading-indentation -Wno-format -fno-modulo-sched -Wno-multistatement-macros \
 		   -Wno-format-truncation -Wno-duplicate-decl-specifier -Wno-memset-elt-size -Wno-bool-operation -Wno-int-in-bool-context -Wno-parentheses -Wno-switch-unreachable -Wno-stringop-overflow -Wno-format-overflow \
+		   -Wno-attribute-alias -Wno-sizeof-pointer-memaccess -Wno-restrict -Wno-packed-not-aligned -Wno-stringop-truncation \
 		   --param l1-cache-size=32 \
 		   --param l2-cache-size=2048 \
 		   --param l1-cache-line-size=64 \
