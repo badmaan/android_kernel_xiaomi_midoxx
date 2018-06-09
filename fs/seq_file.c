@@ -727,11 +727,6 @@ int seq_put_decimal_ull(struct seq_file *m, char delimiter,
 	if (delimiter)
 		m->buf[m->count++] = delimiter;
 
-	if (num < 10) {
-		m->buf[m->count++] = num + '0';
-		return 0;
-	}
-
 	len = num_to_str(m->buf + m->count, m->size - m->count, num);
 	if (!len)
 		goto overflow;
