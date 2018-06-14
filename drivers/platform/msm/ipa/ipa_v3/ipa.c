@@ -3485,9 +3485,11 @@ void ipa3_inc_acquire_wakelock(void)
 	unsigned long flags;
 
 	spin_lock_irqsave(&ipa3_ctx->wakelock_ref_cnt.spinlock, flags);
+#if 0
 	ipa3_ctx->wakelock_ref_cnt.cnt++;
 	if (ipa3_ctx->wakelock_ref_cnt.cnt == 1)
 		__pm_stay_awake(&ipa3_ctx->w_lock);
+#endif
 	IPADBG_LOW("active wakelock ref cnt = %d\n",
 		ipa3_ctx->wakelock_ref_cnt.cnt);
 	spin_unlock_irqrestore(&ipa3_ctx->wakelock_ref_cnt.spinlock, flags);
@@ -3506,11 +3508,13 @@ void ipa3_dec_release_wakelock(void)
 	unsigned long flags;
 
 	spin_lock_irqsave(&ipa3_ctx->wakelock_ref_cnt.spinlock, flags);
+#if 0
 	ipa3_ctx->wakelock_ref_cnt.cnt--;
-	IPADBG_LOW("active wakelock ref cnt = %d\n",
-		ipa3_ctx->wakelock_ref_cnt.cnt);
 	if (ipa3_ctx->wakelock_ref_cnt.cnt == 0)
 		__pm_relax(&ipa3_ctx->w_lock);
+#endif
+	IPADBG_LOW("active wakelock ref cnt = %d\n",
+		ipa3_ctx->wakelock_ref_cnt.cnt);
 	spin_unlock_irqrestore(&ipa3_ctx->wakelock_ref_cnt.spinlock, flags);
 }
 
@@ -4587,8 +4591,10 @@ static int ipa3_pre_init(const struct ipa3_plat_drv_res *resource_p,
 		goto fail_nat_dev_add;
 	}
 
+#if 0
 	/* Create a wakeup source. */
 	wakeup_source_init(&ipa3_ctx->w_lock, "IPA_WS");
+#endif
 	spin_lock_init(&ipa3_ctx->wakelock_ref_cnt.spinlock);
 
 	/* Initialize IPA RM (resource manager) */

@@ -3418,6 +3418,7 @@ void ipa_inc_acquire_wakelock(enum ipa_wakelock_ref_client ref_client)
 	if (ref_client >= IPA_WAKELOCK_REF_CLIENT_MAX)
 		return;
 	spin_lock_irqsave(&ipa_ctx->wakelock_ref_cnt.spinlock, flags);
+#if 0
 	if (ipa_ctx->wakelock_ref_cnt.cnt & (1 << ref_client))
 		IPADBG("client enum %d mask already set. ref cnt = %d\n",
 		ref_client, ipa_ctx->wakelock_ref_cnt.cnt);
@@ -3427,6 +3428,7 @@ void ipa_inc_acquire_wakelock(enum ipa_wakelock_ref_client ref_client)
 		__pm_stay_awake(&ipa_ctx->w_lock);
 		ipa_ctx->wakelock_ref_cnt.wakelock_acquired = true;
 	}
+#endif
 	IPADBG("active wakelock ref cnt = %d client enum %d\n",
 		ipa_ctx->wakelock_ref_cnt.cnt, ref_client);
 	spin_unlock_irqrestore(&ipa_ctx->wakelock_ref_cnt.spinlock, flags);
@@ -3447,14 +3449,16 @@ void ipa_dec_release_wakelock(enum ipa_wakelock_ref_client ref_client)
 	if (ref_client >= IPA_WAKELOCK_REF_CLIENT_MAX)
 		return;
 	spin_lock_irqsave(&ipa_ctx->wakelock_ref_cnt.spinlock, flags);
-	ipa_ctx->wakelock_ref_cnt.cnt &= ~(1 << ref_client);
 	IPADBG("active wakelock ref cnt = %d client enum %d\n",
 		ipa_ctx->wakelock_ref_cnt.cnt, ref_client);
+#if 0
+	ipa_ctx->wakelock_ref_cnt.cnt &= ~(1 << ref_client);
 	if (ipa_ctx->wakelock_ref_cnt.cnt == 0 &&
 		ipa_ctx->wakelock_ref_cnt.wakelock_acquired) {
 		__pm_relax(&ipa_ctx->w_lock);
 		ipa_ctx->wakelock_ref_cnt.wakelock_acquired = false;
 	}
+#endif
 	spin_unlock_irqrestore(&ipa_ctx->wakelock_ref_cnt.spinlock, flags);
 }
 
@@ -4235,10 +4239,10 @@ static int ipa_init(const struct ipa_plat_drv_res *resource_p,
 		goto fail_nat_dev_add;
 	}
 
-
-
+#if 0
 	/* Create a wakeup source. */
 	wakeup_source_init(&ipa_ctx->w_lock, "IPA_WS");
+#endif
 	spin_lock_init(&ipa_ctx->wakelock_ref_cnt.spinlock);
 
 	/* Initialize the SPS PM lock. */
@@ -4986,6 +4990,7 @@ int ipa2_ap_suspend(struct device *dev)
 
 	IPADBG("Enter...\n");
 
+#if 0
 	/* In case there is a tx/rx handler in polling mode fail to suspend */
 	for (i = 0; i < ipa_ctx->ipa_num_pipes; i++) {
 		if (ipa_ctx->ep[i].sys &&
@@ -4995,7 +5000,8 @@ int ipa2_ap_suspend(struct device *dev)
 			return -EAGAIN;
 		}
 	}
-
+#endif
+	
 	/* release SPS IPA resource without waiting for inactivity timer */
 	atomic_set(&ipa_ctx->sps_pm.eot_activity, 0);
 	ipa_sps_release_resource(NULL);

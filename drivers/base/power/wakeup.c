@@ -44,8 +44,6 @@ static bool enable_netlink_ws = true;
 module_param(enable_netlink_ws, bool, 0644);
 static bool enable_netmgr_wl_ws = true;
 module_param(enable_netmgr_wl_ws, bool, 0644);
-static bool enable_alarmtimer_ws = true;
-module_param(enable_alarmtimer_ws, bool, 0644);
 static bool enable_bq_delt_soc_wake_lock_ws = true;
 module_param(enable_bq_delt_soc_wake_lock_ws, bool, 0644);
 static bool enable_wlan_ipa_ws = true;
@@ -528,8 +526,6 @@ static bool wakeup_source_blocker(struct wakeup_source *ws)
 				!strncmp(ws->name, "wlan_rx_wake", wslen)) ||
 			(!enable_bluetooth_timer_ws &&
 				!strncmp(ws->name, "bluetooth_timer", wslen)) ||
-			(!enable_alarmtimer_ws &&
-				!strncmp(ws->name, "alarmtimer", wslen)) ||
 			(!enable_bq_delt_soc_wake_lock_ws &&
 				!strncmp(ws->name, "bq_delt_soc_wake_lock", wslen)) ||
 			(!enable_wlan_wow_wl_ws &&
