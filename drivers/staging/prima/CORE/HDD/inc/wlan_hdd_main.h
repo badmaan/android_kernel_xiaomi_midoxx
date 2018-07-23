@@ -2372,4 +2372,13 @@ int hdd_parse_disable_chan_cmd(hdd_adapter_t *adapter, tANI_U8 *ptr);
 int hdd_get_disable_ch_list(hdd_context_t *hdd_ctx, tANI_U8 *buf,
                             tANI_U8 buf_len);
 
+/**
+ * hdd_is_cli_iface_up() - check if there is any cli iface up
+ * @hdd_ctx: HDD context
+ *
+ * Return: return true if there is any cli iface(STA/P2P_CLI) is up
+ *         else return false
+ */
+bool hdd_is_cli_iface_up(hdd_context_t *hdd_ctx);
+
 #endif    // end #if !defined( WLAN_HDD_MAIN_H )
