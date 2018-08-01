@@ -17113,7 +17113,7 @@ WDI_ProcessStartRsp
     wdiStartRspCb( &wdiRspParams, pWDICtx->pRspCBUserData);
 
     WDI_DetectedDeviceError(pWDICtx, wdiRspParams.wdiStatus);
-    wpalWlanReload();
+    wpalWlanReload(VOS_WDI_FAILURE);
 
     /*Although the response is an error - it was processed by our function
     so as far as the caller is concerned this is a succesful reponse processing*/
@@ -17249,7 +17249,7 @@ WDI_ProcessStopRsp
                halMacStopRspMsg.stopRspParams.status);
 
     WDI_DetectedDeviceError( pWDICtx, WDI_ERR_BASIC_OP_FAILURE);
-    wpalWlanReload();
+    wpalWlanReload(VOS_WDI_FAILURE);
 
     wpalMutexRelease(&pWDICtx->wptMutex);
     return WDI_STATUS_E_FAILURE;
@@ -23243,7 +23243,7 @@ WDI_RXMsgCTSCB
     WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
               "Invalid packet received from HAL - catastrophic failure");
     WDI_DetectedDeviceError( pWDICtx, WDI_ERR_INVALID_RSP_FMT);
-    wpalWlanReload();
+    wpalWlanReload(VOS_WDI_FAILURE);
 
     return;
   }
@@ -23770,7 +23770,7 @@ WDI_ResponseTimerCB
     }
 #else
     WDI_DetectedDeviceError(pWDICtx, WDI_ERR_BASIC_OP_FAILURE);
-    wpalWlanReload();
+    wpalWlanReload(VOS_WDI_FAILURE);
 #endif
   }
   else
@@ -39148,6 +39148,10 @@ WDI_Status WDI_ProcessSetAllowedActionFramesInd(WDI_ControlBlockType *pWDICtx,
         WDI_ASSERT(0);
         return WDI_STATUS_E_FAILURE;
     }
+    /*-----------------------------------------------------------------------
+      Get message buffer
+    -----------------------------------------------------------------------*/
+    usLen = sizeof(tHalAllowedActionFrames);
 
     if ((WDI_STATUS_SUCCESS != WDI_GetMessageBuffer(pWDICtx,
                                         WDI_SET_ALLOWED_ACTION_FRAMES_IND,

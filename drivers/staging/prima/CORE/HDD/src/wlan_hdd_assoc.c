@@ -503,6 +503,7 @@ void hdd_copy_ht_caps(struct ieee80211_ht_cap *hdd_ht_cap,
             ((short) (roam_ht_cap->supportedMCSSet[10]));
         hdd_ht_cap->mcs.tx_params =
             roam_ht_cap->supportedMCSSet[12];
+
 }
 
 
@@ -800,6 +801,9 @@ static void hdd_save_bss_info(hdd_adapter_t *adapter,
     } else {
         hdd_sta_ctx->conn_info.conn_flag.vht_op_present = false;
     }
+    /* Cache last connection info */
+    vos_mem_copy(&hdd_sta_ctx->cache_conn_info, &hdd_sta_ctx->conn_info,
+                 sizeof(connection_info_t));
 }
 
 void hdd_connSaveConnectInfo( hdd_adapter_t *pAdapter, tCsrRoamInfo *pRoamInfo, eCsrRoamBssType eBssType )
@@ -1674,7 +1678,8 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
      * to cfg80211_disconnected
      */
     if ((eConnectionState_Disconnecting == pHddStaCtx->conn_info.connState) ||
-        (eConnectionState_NotConnected == pHddStaCtx->conn_info.connState))
+        (eConnectionState_NotConnected == pHddStaCtx->conn_info.connState) ||
+        (eConnectionState_Connecting == pHddStaCtx->conn_info.connState))
     {
        VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
                    FL(" HDD has initiated a disconnect, no need to send"
@@ -1905,10 +1910,15 @@ static eHalStatus hdd_DisConnectHandler( hdd_adapter_t *pAdapter, tCsrRoamInfo *
 
     // Clear saved connection information in HDD
     hdd_connRemoveConnectInfo( pHddStaCtx );
-    VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                   "%s: Set HDD connState to eConnectionState_NotConnected",
-                   __func__);
-    hdd_connSetConnectionState( pHddStaCtx, eConnectionState_NotConnected );
+
+    /*
+     * eConnectionState_Connecting state mean that connection is in progress so
+     * no need to set state to eConnectionState_NotConnected
+     */
+    if ((eConnectionState_Connecting != pHddStaCtx->conn_info.connState)) {
+         hddLog(LOG1, FL("Set HDD connState to eConnectionState_NotConnected"));
+         hdd_connSetConnectionState(pHddStaCtx, eConnectionState_NotConnected);
+    }
 #ifdef WLAN_FEATURE_GTK_OFFLOAD
     if ((WLAN_HDD_INFRA_STATION == pAdapter->device_mode) ||
         (WLAN_HDD_P2P_CLIENT == pAdapter->device_mode))
@@ -2803,7 +2813,7 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                 hddLog(VOS_TRACE_LEVEL_INFO,"Restart Sap as SAP channel is %d "
                        "and STA channel is %d", pHostapdAdapter->sessionCtx.ap.operatingChannel,
                        (int)pRoamInfo->pBssDesc->channelId);
-                if (pHddCtx->cfg_ini->force_scc_with_ecsa)
+                if (pHddCtx->cfg_ini && pHddCtx->cfg_ini->force_scc_with_ecsa)
                 {
                     hdd_schedule_ecsa_chan_change_work(pHddCtx,
                                                        pAdapter->sessionId);
@@ -2811,7 +2821,8 @@ static eHalStatus hdd_AssociationCompletionHandler( hdd_adapter_t *pAdapter, tCs
                 else
                 {
                     hdd_hostapd_stop(pHostapdAdapter->dev);
-                    if (pHddCtx->cfg_ini->enable_sap_auth_offload)
+                    if (pHddCtx->cfg_ini &&
+                        pHddCtx->cfg_ini->enable_sap_auth_offload)
                        hdd_force_scc_restart_sap(pHostapdAdapter,
                              pHddCtx, (int)pRoamInfo->pBssDesc->channelId);
                 }
@@ -6089,4 +6100,47 @@ static void hdd_indicateEseBcnReportInd(const hdd_adapter_t *pAdapter,
 }
 
 #endif /* FEATURE_WLAN_ESE && FEATURE_WLAN_ESE_UPLOAD */
+
+hdd_adapter_t *hdd_get_sta_connection_in_progress(hdd_context_t *hdd_ctx)
+{
+    hdd_adapter_list_node_t *adapter_node = NULL, *next = NULL;
+    hdd_adapter_t *adapter = NULL;
+    VOS_STATUS status;
+    hdd_station_ctx_t *hdd_sta_ctx;
+
+    if (!hdd_ctx) {
+        hddLog(LOGE, FL("HDD context is NULL"));
+        return NULL;
+    }
+
+    status = hdd_get_front_adapter(hdd_ctx, &adapter_node);
+    while (NULL != adapter_node && VOS_STATUS_SUCCESS == status) {
+        adapter = adapter_node->pAdapter;
+        if (!adapter)
+            goto end;
+
+        if ((WLAN_HDD_INFRA_STATION == adapter->device_mode) ||
+            (WLAN_HDD_P2P_CLIENT == adapter->device_mode) ||
+            (WLAN_HDD_P2P_DEVICE == adapter->device_mode)) {
+            hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
+            if (eConnectionState_Connecting ==
+                hdd_sta_ctx->conn_info.connState) {
+                    hddLog(LOG1, FL("session_id %d: Connection is in progress"),
+                           adapter->sessionId);
+                    return adapter;
+            } else if ((eConnectionState_Associated ==
+                hdd_sta_ctx->conn_info.connState) &&
+                sme_is_sta_key_exchange_in_progress(
+                hdd_ctx->hHal, adapter->sessionId)) {
+                    hddLog(LOG1, FL("session_id %d: Key exchange is in progress"),
+                           adapter->sessionId);
+                    return adapter;
+            }
+        }
+end:
+        status = hdd_get_next_adapter(hdd_ctx, adapter_node, &next);
+        adapter_node = next;
+    }
+    return NULL;
+}
 
