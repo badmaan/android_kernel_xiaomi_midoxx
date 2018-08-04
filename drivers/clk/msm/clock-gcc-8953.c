@@ -66,7 +66,6 @@ static DEFINE_CLK_VOTER(bimc_msmbus_clk, &bimc_clk.c, LONG_MAX);
 static DEFINE_CLK_VOTER(bimc_msmbus_a_clk, &bimc_a_clk.c, LONG_MAX);
 static DEFINE_CLK_VOTER(bimc_usb_clk, &bimc_clk.c, LONG_MAX);
 static DEFINE_CLK_VOTER(bimc_usb_a_clk, &bimc_a_clk.c, LONG_MAX);
-static DEFINE_CLK_VOTER(bimc_wcnss_a_clk, &bimc_a_clk.c, LONG_MAX);
 
 /* PCNOC Voter */
 static DEFINE_CLK_VOTER(pcnoc_keepalive_a_clk, &pcnoc_a_clk.c, LONG_MAX);
@@ -80,7 +79,6 @@ static DEFINE_CLK_VOTER(snoc_msmbus_clk, &snoc_clk.c, LONG_MAX);
 static DEFINE_CLK_VOTER(snoc_msmbus_a_clk, &snoc_a_clk.c, LONG_MAX);
 static DEFINE_CLK_VOTER(snoc_usb_clk, &snoc_clk.c, LONG_MAX);
 static DEFINE_CLK_VOTER(snoc_usb_a_clk, &snoc_a_clk.c, LONG_MAX);
-static DEFINE_CLK_VOTER(snoc_wcnss_a_clk, &snoc_a_clk.c, LONG_MAX);
 
 /* SYSMMNOC Voter */
 static DEFINE_CLK_VOTER(sysmmnoc_msmbus_clk, &sysmmnoc_clk.c, LONG_MAX);
@@ -382,31 +380,13 @@ static struct clk_freq_tbl ftbl_gfx3d_clk_src[] = {
 	F_MM( 216000000, FIXED_CLK_SRC, gpll6_main_div2_gfx,  2.5,    0,     0),
 	F_MM( 266670000, FIXED_CLK_SRC,               gpll0,    3,    0,     0),
 	F_MM( 320000000, FIXED_CLK_SRC,               gpll0,  2.5,    0,     0),
-	F_MM( 400000000, FIXED_CLK_SRC,               gpll0,    2,    0,     0),
+	F_MM( 455000000, FIXED_CLK_SRC,               gpll0,    2,    0,     0),
 	F_MM( 460800000, FIXED_CLK_SRC,       gpll4_out_aux,  2.5,    0,     0),
-	F_MM( 510000000,    1020000000,               gpll3,    1,    0,     0),
-	F_MM( 560000000,    1120000000,               gpll3,    1,    0,     0),
-	F_MM( 650000000,    1300000000,               gpll3,    1,    0,     0),
+	F_MM( 560000000,    1180000000,               gpll3,    1,    0,     0),
+	F_MM( 682000000,    1320000000,               gpll3,    1,    0,     0),
+	F_MM( 739000000,    1430000000,               gpll3,    1,    0,     0),
+	F_MM( 955000000,    1510000000,               gpll3,    1,    0,     0),
 
-	F_END
-};
-
-static struct clk_freq_tbl ftbl_gfx3d_clk_src_sdm450[] = {
-	F_MM(  19200000, FIXED_CLK_SRC,                  xo,    1,    0,     0),
-	F_MM(  50000000, FIXED_CLK_SRC,  gpll0_main_div2_mm,    8,    0,     0),
-	F_MM(  80000000, FIXED_CLK_SRC,  gpll0_main_div2_mm,    5,    0,     0),
-	F_MM( 100000000, FIXED_CLK_SRC,  gpll0_main_div2_mm,    4,    0,     0),
-	F_MM( 133330000, FIXED_CLK_SRC,  gpll0_main_div2_mm,    3,    0,     0),
-	F_MM( 160000000, FIXED_CLK_SRC,  gpll0_main_div2_mm,  2.5,    0,     0),
-	F_MM( 200000000, FIXED_CLK_SRC,  gpll0_main_div2_mm,    2,    0,     0),
-	F_MM( 216000000, FIXED_CLK_SRC, gpll6_main_div2_gfx,  2.5,    0,     0),
-	F_MM( 266670000, FIXED_CLK_SRC,               gpll0,    3,    0,     0),
-	F_MM( 320000000, FIXED_CLK_SRC,               gpll0,  2.5,    0,     0),
-	F_MM( 400000000, FIXED_CLK_SRC,               gpll0,    2,    0,     0),
-	F_MM( 460800000, FIXED_CLK_SRC,       gpll4_out_aux,  2.5,    0,     0),
-	F_MM( 510000000,    1020000000,               gpll3,    1,    0,     0),
-	F_MM( 560000000,    1120000000,               gpll3,    1,    0,     0),
-	F_MM( 600000000,    1200000000,               gpll3,    1,    0,     0),
 	F_END
 };
 
@@ -1165,7 +1145,6 @@ static struct rcg_clk camss_gp1_clk_src = {
 };
 
 static struct clk_freq_tbl ftbl_mclk0_clk_src[] = {
-	F(  19200000,              xo,    1,    0,     0),
 	F(  24000000, gpll6_main_div2,    1,    2,    45),
 	F(  33330000, gpll0_main_div2,   12,    0,     0),
 	F(  66667000,           gpll0,   12,    0,     0),
@@ -3460,7 +3439,6 @@ static struct clk_lookup msm_clocks_lookup[] = {
 	CLK_LIST(bimc_msmbus_a_clk),
 	CLK_LIST(bimc_usb_clk),
 	CLK_LIST(bimc_usb_a_clk),
-	CLK_LIST(bimc_wcnss_a_clk),
 	CLK_LIST(pcnoc_keepalive_a_clk),
 	CLK_LIST(pcnoc_msmbus_clk),
 	CLK_LIST(pcnoc_msmbus_a_clk),
@@ -3470,7 +3448,6 @@ static struct clk_lookup msm_clocks_lookup[] = {
 	CLK_LIST(snoc_msmbus_a_clk),
 	CLK_LIST(snoc_usb_clk),
 	CLK_LIST(snoc_usb_a_clk),
-	CLK_LIST(snoc_wcnss_a_clk),
 	CLK_LIST(sysmmnoc_msmbus_clk),
 	CLK_LIST(sysmmnoc_msmbus_a_clk),
 	CLK_LIST(xo_dwc3_clk),
@@ -3944,6 +3921,63 @@ static struct clk_lookup msm_clocks_gcc_gfx[] = {
 	CLK_LIST(gcc_bimc_gpu_clk),
 };
 
+
+#ifdef CONFIG_GPU_VOLTAGE
+extern int cpr2_gfx_regulator_get_corner_voltage(struct regulator *regulator,
+		int corner);
+extern int cpr2_gfx_regulator_set_corner_voltage(struct regulator *regulator,
+		int corner, int volt);
+
+ssize_t gpu_clock_get_vdd(char *buf)
+{
+	ssize_t count = 0;
+	int i, uv;
+
+	if (!buf)
+		return 0;
+
+	for (i = 1; i < gfx3d_clk_src.c.num_fmax; i++) {
+		uv = cpr2_gfx_regulator_get_corner_voltage(
+					gfx3d_clk_src.c.vdd_class->regulator[0],
+					gfx3d_clk_src.c.vdd_class->vdd_uv[i]);
+		if (uv < 0)
+			return 0;
+		count += sprintf(buf + count, "%lumhz: %d mV\n",
+					gfx3d_clk_src.c.fmax[i] / 1000000,
+					uv / 1000);
+	}
+
+	return count;
+}
+
+ssize_t gpu_clock_set_vdd(const char *buf, size_t count)
+{
+	int i, mv, ret;
+	char line[32];
+
+	if (!buf)
+		return -EINVAL;
+
+	for (i = 1; i < gfx3d_clk_src.c.num_fmax; i++) {
+		ret = sscanf(buf, "%d", &mv);
+		if (ret != 1)
+			return -EINVAL;
+
+		ret = cpr2_gfx_regulator_set_corner_voltage(
+					gfx3d_clk_src.c.vdd_class->regulator[0],
+					gfx3d_clk_src.c.vdd_class->vdd_uv[i],
+					mv * 1000);
+        if (ret < 0)
+			return ret;
+
+        ret = sscanf(buf, "%s", line);
+		buf += strlen(line) + 1;
+	}
+
+	return count;
+}
+#endif
+
 static int of_get_fmax_vdd_class(struct platform_device *pdev, struct clk *c,
 								char *prop_name)
 {
@@ -4004,7 +4038,6 @@ static int msm_gcc_gfx_probe(struct platform_device *pdev)
 	struct resource *res;
 	int ret;
 	u32 regval;
-	bool compat_bin = false;
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "cc_base");
 	if (!res) {
@@ -4025,11 +4058,6 @@ static int msm_gcc_gfx_probe(struct platform_device *pdev)
 			dev_err(&pdev->dev, "Unable to get vdd_gfx regulator!");
 		return PTR_ERR(vdd_gfx.regulator[0]);
 	}
-
-	compat_bin = of_device_is_compatible(pdev->dev.of_node,
-							"qcom,gcc-gfx-sdm450");
-	if (compat_bin)
-		gfx3d_clk_src.freq_tbl = ftbl_gfx3d_clk_src_sdm450;
 
 	ret = of_get_fmax_vdd_class(pdev, &gcc_oxili_gfx3d_clk.c,
 					"qcom,gfxfreq-corner");
@@ -4053,7 +4081,6 @@ static int msm_gcc_gfx_probe(struct platform_device *pdev)
 
 static struct of_device_id msm_clock_gfx_match_table[] = {
 	{ .compatible = "qcom,gcc-gfx-8953" },
-	{ .compatible = "qcom,gcc-gfx-sdm450" },
 	{}
 };
 
